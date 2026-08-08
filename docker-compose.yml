@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: menuqr_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-menuqr}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-menuqr}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+    container_name: menuqr_backend
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      # Sin default: obliga a definirlo en .env (ver .env.example) en vez de arrancar
+      # con una clave insegura conocida — la del .env.example del backend es pública.
+      SECRET_KEY: ${SECRET_KEY:?Definí SECRET_KEY en un .env en la raíz del repo (copiá .env.example)}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${ACCESS_TOKEN_EXPIRE_MINUTES:-15}
+      REFRESH_TOKEN_EXPIRE_DAYS: ${REFRESH_TOKEN_EXPIRE_DAYS:-7}
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-menuqr}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-mock_cloud}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-mock_key}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-mock_secret}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:3000}
+      BACKEND_BASE_URL: ${BACKEND_BASE_URL:-http://localhost:8000}
+    ports:
+      - "8000:8000"
+    volumes:
+      # Persiste los QR/imágenes servidos localmente cuando Cloudinary está en modo
+      # mock — sin esto se pierden cada vez que se recrea el contenedor.
+      - backend_static:/app/static
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        # NEXT_PUBLIC_* se hornea en el bundle de cliente durante `next build` (ver
+        # frontend/Dockerfile) — cambiar esto requiere reconstruir la imagen, no solo
+        # reiniciar el contenedor.
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_BASE_URL: ${NEXT_PUBLIC_BASE_URL:-http://localhost:3000}
+    container_name: menuqr_frontend
+    ports:
+      - "3000:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  backend_static:

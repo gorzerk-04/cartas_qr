@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+**/__pycache__/
+*.pyc
+.pytest_cache/
+.env
+.env.local
+menuqr.db
+static/
+tests/
+.git
+.gitignore
