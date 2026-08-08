@@ -103,9 +103,10 @@ uvicorn app.main:app --reload
 ### Frontend
 ```bash
 cd frontend
-npm install
+corepack enable          # activa pnpm en la versión fijada en package.json ("packageManager")
+pnpm install
 cp .env.example .env
-npm run dev
+pnpm dev
 ```
 
 ### Tests
@@ -117,9 +118,9 @@ python -m pytest tests/ -v
 
 ### Suite E2E de autenticación (navegador real)
 
-`pytest`/`tsc`/`npm run build` no ejecutan JavaScript de cliente de verdad — no detectan bugs de comportamiento del navegador (ej. una cookie de sesión que no se invalida en el logout aunque toda la suite de arriba esté en verde). Por eso hay una suite aparte con Playwright que corre contra un Chrome real, cubriendo los flujos críticos de auth: login exitoso, login con credenciales incorrectas, logout invalida la sesión (una sesión vieja no puede refrescarse), y acceso a una ruta `/admin/*` sin sesión redirige a login sin loop.
+`pytest`/`tsc`/`pnpm build` no ejecutan JavaScript de cliente de verdad — no detectan bugs de comportamiento del navegador (ej. una cookie de sesión que no se invalida en el logout aunque toda la suite de arriba esté en verde). Por eso hay una suite aparte con Playwright que corre contra un Chrome real, cubriendo los flujos críticos de auth: login exitoso, login con credenciales incorrectas, logout invalida la sesión (una sesión vieja no puede refrescarse), y acceso a una ruta `/admin/*` sin sesión redirige a login sin loop.
 
-Es una suite **manual**, no forma parte de `npm run build` ni de ningún CI — correrla antes de cada release, o después de tocar el flujo de auth/sesión.
+Es una suite **manual**, no forma parte de `pnpm build` ni de ningún CI — correrla antes de cada release, o después de tocar el flujo de auth/sesión.
 
 Requiere backend y frontend levantados (con el usuario admin ya sembrado) y Google Chrome instalado en la máquina (usa el Chrome real del sistema vía `channel: "chrome"`, no descarga un Chromium aparte):
 
@@ -127,7 +128,7 @@ Requiere backend y frontend levantados (con el usuario admin ya sembrado) y Goog
 # Terminal 1
 cd backend && source venv/Scripts/activate && uvicorn app.main:app --reload
 # Terminal 2
-cd frontend && npm run dev
+cd frontend && pnpm dev
 # Terminal 3
-cd frontend && npm run test:e2e
+cd frontend && pnpm test:e2e
 ```

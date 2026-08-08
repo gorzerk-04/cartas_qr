@@ -1,6 +1,6 @@
 import { defineConfig, devices } from "@playwright/test";
 
-// Suite manual, no forma parte de `npm run build`/CI rápido (ver README) — corre un
+// Suite manual, no forma parte de `pnpm build`/CI rápido (ver README) — corre un
 // Chrome real y ejecuta JS de cliente de verdad, algo que ninguna otra herramienta de
 // este proyecto hace (pytest y tsc no detectan bugs de comportamiento del navegador,
 // como el bug de logout que motivó este módulo).

@@ -1,16 +1,20 @@
 # deps: instala node_modules por separado para aprovechar la cache de Docker —
-# solo se reinstala si cambia package.json/package-lock.json, no en cada cambio de código.
+# solo se reinstala si cambia package.json/pnpm-lock.yaml, no en cada cambio de código.
+# corepack (incluido en la imagen node:20-slim) lee el campo "packageManager" de
+# package.json y activa la versión exacta de pnpm que se usó para generar el lockfile.
 FROM node:20-slim AS deps
 
 WORKDIR /app
-COPY package.json package-lock.json* ./
-RUN npm ci
+RUN corepack enable
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml* ./
+RUN pnpm install --frozen-lockfile
 
 # builder: usa "output: standalone" (next.config.ts) para que next build genere un
 # server.js mínimo con solo los node_modules que la app realmente usa.
 FROM node:20-slim AS builder
 
 WORKDIR /app
+RUN corepack enable
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -22,7 +26,7 @@ ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL \
     NEXT_PUBLIC_BASE_URL=$NEXT_PUBLIC_BASE_URL \
     NEXT_TELEMETRY_DISABLED=1
 
-RUN npm run build
+RUN pnpm run build
 
 # runner: imagen final mínima — solo el server.js standalone + los estáticos que
 # ese server no copia automáticamente (public/, .next/static).
