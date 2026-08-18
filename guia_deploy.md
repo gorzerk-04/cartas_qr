@@ -152,7 +152,53 @@ Y en el navegador: login en `https://<vercel-url>/admin/login`, crear un restaur
 
 ---
 
-## 6. Alternativa: self-hosted con Docker Compose
+## 6. ⚠️ TEMPORAL — Despliegue de prueba en Render (1 semana, antes de migrar a Fly.io)
+
+> **Esta sección es temporal.** Se usa para una prueba de ~1 semana en Render antes de migrar definitivamente a Fly.io (sección 4.2). **Borrar esta sección completa una vez completada la migración a Fly.io** — no es la plataforma de despliegue definitiva del proyecto.
+
+El backend corre tal cual con el `Dockerfile` del repo (ya soporta `$PORT` dinámico, que es lo único que necesita Render). No se usa `render.yaml`: la configuración se hace manualmente desde el dashboard de Render, ya que es una plataforma temporal.
+
+### 6.1 Crear el Web Service
+
+1. En el dashboard de Render: **New → Web Service**, conectar el repositorio de GitHub.
+2. **Root Directory**: `backend`
+3. **Runtime**: Docker (detecta el `Dockerfile` automáticamente)
+4. **Health Check Path**: `/health`
+
+### 6.2 Variables de entorno (dashboard → Environment)
+
+Mismo set que en Fly (sección 3), con credenciales **reales** de Cloudinary (no `mock_*`, para que las imágenes no se pierdan en cada redeploy — el disco de Render también es efímero):
+
+| Variable | Valor |
+|---|---|
+| `SECRET_KEY` | `openssl rand -hex 32` (puede ser distinto al de Fly — los tokens JWT no necesitan ser intercambiables entre plataformas) |
+| `DATABASE_URL` | Mismo connection string de Neon + `?sslmode=require` |
+| `CLOUDINARY_CLOUD_NAME` / `CLOUDINARY_API_KEY` / `CLOUDINARY_API_SECRET` | Credenciales reales de Cloudinary |
+| `ALLOWED_ORIGINS` | URL del frontend (Vercel) |
+| `FRONTEND_BASE_URL` | Igual a `ALLOWED_ORIGINS` |
+| `BACKEND_BASE_URL` | `https://<app>.onrender.com` |
+| `ENVIRONMENT` | `production` |
+| `ACCESS_TOKEN_EXPIRE_MINUTES` | `15` |
+| `REFRESH_TOKEN_EXPIRE_DAYS` | `7` |
+
+### 6.3 Deploy y verificación
+
+Render despliega automáticamente al crear el servicio (y en cada push a la rama configurada). Verificar:
+
+```bash
+curl https://<app>.onrender.com/health          # debe responder 200
+```
+
+Y subir una imagen de prueba desde el admin para confirmar que la URL devuelta apunta a `res.cloudinary.com` (no a `<app>.onrender.com/static/...`).
+
+### 6.4 Notas
+
+- **Cold starts**: en el plan free de Render, tras un período de inactividad el arranque es notablemente más lento que en Fly.io (Firecracker ~1s) — puede tardar varios segundos a más de medio minuto en la primera request. Si la latencia importa durante la prueba, considerar un plan pago o un keep-alive externo.
+- **Migración de vuelta a Fly.io**: seguir la sección 4.2 sin cambios, reusando el mismo Neon y la misma cuenta de Cloudinary (cero migración de datos, ya que ambos son externos a la plataforma de hosting). Actualizar `ALLOWED_ORIGINS`/`FRONTEND_BASE_URL`/`BACKEND_BASE_URL` al dominio `.fly.dev`, verificar, y luego apagar el servicio en Render y **borrar esta sección**.
+
+---
+
+## 7. Alternativa: self-hosted con Docker Compose
 
 Para un VPS propio en vez de Vercel/Fly.io/Neon, el repo ya trae todo listo:
 
