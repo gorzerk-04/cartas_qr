@@ -148,3 +148,80 @@ def test_upload_logo_requires_auth(client, db):
         files={"file": fake_image_file()},
     )
     assert response.status_code == 401
+
+
+def test_delete_logo_clears_url_and_file(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    upload = client.post(
+        f"/api/v1/admin/restaurants/{restaurant_id}/logo",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": fake_image_file()},
+    )
+    assert upload.json()["logo_url"] is not None
+
+    response = client.delete(
+        f"/api/v1/admin/restaurants/{restaurant_id}/logo",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["logo_url"] is None
+
+    # Y persiste: no es solo lo que devolvió la respuesta.
+    detail = client.get(
+        f"/api/v1/admin/restaurants/{restaurant_id}",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+    assert detail.json()["logo_url"] is None
+
+
+def test_delete_cover_clears_url(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    client.post(
+        f"/api/v1/admin/restaurants/{restaurant_id}/cover",
+        headers={"Authorization": f"Bearer {token}"},
+        files={"file": fake_image_file()},
+    )
+
+    response = client.delete(
+        f"/api/v1/admin/restaurants/{restaurant_id}/cover",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["cover_url"] is None
+
+
+def test_delete_logo_without_logo_is_noop(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    response = client.delete(
+        f"/api/v1/admin/restaurants/{restaurant_id}/logo",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200
+    assert response.json()["logo_url"] is None
+
+
+def test_delete_logo_restaurant_not_found(client, db):
+    token = seed_test_user_and_auth(client, db)
+
+    response = client.delete(
+        "/api/v1/admin/restaurants/00000000-0000-0000-0000-000000000000/logo",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 404
+
+
+def test_delete_logo_requires_auth(client, db):
+    response = client.delete(
+        "/api/v1/admin/restaurants/00000000-0000-0000-0000-000000000000/logo"
+    )
+    assert response.status_code == 401

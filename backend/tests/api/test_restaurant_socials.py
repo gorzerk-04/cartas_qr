@@ -200,3 +200,57 @@ def test_socials_require_auth(client, db):
         "/api/v1/admin/restaurants/00000000-0000-0000-0000-000000000000/socials"
     )
     assert response.status_code == 401
+
+
+def test_create_social_rejects_non_url(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    response = client.post(
+        f"/api/v1/admin/restaurants/{restaurant_id}/socials",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"platform": "instagram", "url": "esto-no-es-una-url"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_social_rejects_non_http_scheme(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    response = client.post(
+        f"/api/v1/admin/restaurants/{restaurant_id}/socials",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"platform": "instagram", "url": "javascript:alert(1)"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_update_social_rejects_non_url(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+    social = create_social(client, token, restaurant_id)
+
+    response = client.put(
+        f"/api/v1/admin/restaurants/{restaurant_id}/socials/{social['id']}",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"url": "sin-esquema.com"},
+    )
+
+    assert response.status_code == 422
+
+
+def test_create_social_trims_whitespace(client, db):
+    token = seed_test_user_and_auth(client, db)
+    restaurant_id = create_restaurant(client, token)
+
+    response = client.post(
+        f"/api/v1/admin/restaurants/{restaurant_id}/socials",
+        headers={"Authorization": f"Bearer {token}"},
+        json={"platform": "facebook", "url": "  https://facebook.com/test  "},
+    )
+
+    assert response.status_code == 201
+    assert response.json()["url"] == "https://facebook.com/test"

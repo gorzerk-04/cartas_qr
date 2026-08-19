@@ -61,4 +61,14 @@ export const restaurantService = {
     });
     return response.data;
   },
+
+  async deleteLogo(id: string): Promise<Restaurant> {
+    const response = await apiClient.delete(`/admin/restaurants/${id}/logo`);
+    return response.data;
+  },
+
+  async deleteCover(id: string): Promise<Restaurant> {
+    const response = await apiClient.delete(`/admin/restaurants/${id}/cover`);
+    return response.data;
+  },
 };

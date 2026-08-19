@@ -100,8 +100,24 @@ class CloudinaryService:
             )
 
     def delete_image(self, public_id: str) -> bool:
-        if not public_id or not self.is_configured:
+        if not public_id:
             return True
+
+        # Sin Cloudinary la imagen vive en disco (ver upload_image): hay que borrar el
+        # archivo real, o quitar el logo desde el panel dejaría el fichero huérfano
+        # ocupando espacio y accesible por URL directa.
+        if not self.is_configured:
+            subfolder_and_name = public_id.replace("menuqr/", "", 1)
+            base_path = os.path.join(STATIC_DIR, "uploads", *subfolder_and_name.split("/"))
+            for ext in set(EXTENSIONS_BY_CONTENT_TYPE.values()):
+                candidate = f"{base_path}.{ext}"
+                if os.path.isfile(candidate):
+                    try:
+                        os.remove(candidate)
+                    except OSError:
+                        return False
+            return True
+
         try:
             response = cloudinary.uploader.destroy(public_id)
             return response.get("result") == "ok"

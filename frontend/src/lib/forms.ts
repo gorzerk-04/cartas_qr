@@ -12,3 +12,28 @@ export function omitEmptyStrings<T extends object>(obj: T): Partial<T> {
   });
   return result;
 }
+
+// Al *editar*, omitir las cadenas vacías hace imposible borrar un campo ya guardado: el
+// backend nunca recibe la intención de limpiarlo, así que responde 200 y conserva el
+// valor anterior (el usuario ve "guardado correctamente" y nada cambió). Aquí se manda
+// `null` explícito, que el backend sí interpreta como "vaciar esta columna".
+//
+// `nullableKeys` es obligatorio y acotado a propósito: hay columnas NOT NULL (name,
+// country, los tres colores de marca) donde mandar null reventaría con un 500, así que
+// para esas se mantiene el comportamiento de omitir.
+export function blankToNull<T extends object>(
+  obj: T,
+  nullableKeys: readonly (keyof T)[]
+): Partial<T> {
+  const nullable = new Set(nullableKeys);
+  const result: Partial<T> = { ...obj };
+  (Object.keys(result) as (keyof T)[]).forEach((key) => {
+    if (result[key] !== "") return;
+    if (nullable.has(key)) {
+      result[key] = null as T[keyof T];
+    } else {
+      delete result[key];
+    }
+  });
+  return result;
+}

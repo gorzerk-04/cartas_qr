@@ -30,10 +30,13 @@ function buildDefaultHours(): OperatingHourInput[] {
 
 interface OperatingHoursEditorProps {
   restaurantId: string;
+  // Solo para refrescar la carta pública, donde el horario decide el "Abierto ahora".
+  slug?: string;
 }
 
 export default function OperatingHoursEditor({
   restaurantId,
+  slug,
 }: OperatingHoursEditorProps) {
   const { data: hours, isLoading } = useOperatingHours(restaurantId);
   const updateMutation = useUpdateOperatingHours();
@@ -81,7 +84,7 @@ export default function OperatingHoursEditor({
           ? { ...row, open_time: null, close_time: null }
           : row
       );
-      await updateMutation.mutateAsync({ restaurantId, hours: payload });
+      await updateMutation.mutateAsync({ restaurantId, slug, hours: payload });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err) {

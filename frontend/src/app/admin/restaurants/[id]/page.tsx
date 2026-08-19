@@ -7,6 +7,8 @@ import {
   useUpdateRestaurant,
   useUploadRestaurantLogo,
   useUploadRestaurantCover,
+  useDeleteRestaurantLogo,
+  useDeleteRestaurantCover,
 } from "../../../../hooks/use-restaurants";
 import { RestaurantUpdate } from "../../../../types";
 import {
@@ -22,7 +24,28 @@ import ImageUploader from "../../../../components/admin/image-uploader";
 import OperatingHoursEditor from "../../../../components/admin/operating-hours-editor";
 import RestaurantSocialsEditor from "../../../../components/admin/restaurant-socials-editor";
 import { getErrorMessage } from "../../../../lib/api-error";
-import { omitEmptyStrings } from "../../../../lib/forms";
+import { blankToNull } from "../../../../lib/forms";
+
+// Columnas que aceptan NULL en la base: vaciar su campo en el formulario debe borrarlas.
+// El resto (name, country y los tres colores) son NOT NULL, así que se omiten si quedan
+// vacías en vez de mandar null. Ver blankToNull().
+const NULLABLE_FIELDS = [
+  "description",
+  "phone",
+  "whatsapp",
+  "email",
+  "website",
+  "address",
+  "city",
+] as const satisfies readonly (keyof RestaurantUpdate)[];
+
+const HEX_COLOR_RE = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+const COLOR_FIELDS = [
+  { key: "primary_color" as const, label: "Color primario" },
+  { key: "secondary_color" as const, label: "Color secundario" },
+  { key: "accent_color" as const, label: "Color acento" },
+];
 
 export default function EditRestaurantPage() {
   const params = useParams();
@@ -32,6 +55,8 @@ export default function EditRestaurantPage() {
   const updateMutation = useUpdateRestaurant();
   const logoMutation = useUploadRestaurantLogo();
   const coverMutation = useUploadRestaurantCover();
+  const deleteLogoMutation = useDeleteRestaurantLogo();
+  const deleteCoverMutation = useDeleteRestaurantCover();
 
   const [form, setForm] = useState<RestaurantUpdate>({
     name: "",
@@ -51,6 +76,7 @@ export default function EditRestaurantPage() {
   });
 
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [colorError, setColorError] = useState<string | null>(null);
 
   useEffect(() => {
     if (restaurant) {
@@ -83,8 +109,26 @@ export default function EditRestaurantPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaveSuccess(false);
+    setColorError(null);
+
+    // Los colores se inyectan tal cual como CSS custom properties en la carta pública:
+    // un valor que no sea hex la deja sin color de marca, en silencio.
+    const invalid = COLOR_FIELDS.filter(({ key }) => {
+      const value = form[key];
+      return !value || !HEX_COLOR_RE.test(value);
+    });
+    if (invalid.length > 0) {
+      setColorError(
+        `Revisa ${invalid.map((c) => c.label.toLowerCase()).join(", ")}: usa formato hexadecimal, por ejemplo #FF6B35.`
+      );
+      return;
+    }
+
     try {
-      await updateMutation.mutateAsync({ id, data: omitEmptyStrings(form) });
+      await updateMutation.mutateAsync({
+        id,
+        data: blankToNull(form, NULLABLE_FIELDS),
+      });
       setSaveSuccess(true);
       setTimeout(() => setSaveSuccess(false), 4000);
     } catch (err) {
@@ -129,6 +173,12 @@ export default function EditRestaurantPage() {
       {apiError && (
         <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
           {apiError}
+        </div>
+      )}
+
+      {colorError && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-400">
+          {colorError}
         </div>
       )}
 
@@ -181,6 +231,10 @@ export default function EditRestaurantPage() {
                 await logoMutation.mutateAsync({ id, file });
               }}
               isUploading={logoMutation.isPending}
+              onRemove={async () => {
+                await deleteLogoMutation.mutateAsync({ id });
+              }}
+              isRemoving={deleteLogoMutation.isPending}
               helpText="Cuadrado, 512×512px recomendado"
             />
             <ImageUploader
@@ -191,16 +245,20 @@ export default function EditRestaurantPage() {
                 await coverMutation.mutateAsync({ id, file });
               }}
               isUploading={coverMutation.isPending}
+              onRemove={async () => {
+                await deleteCoverMutation.mutateAsync({ id });
+              }}
+              isRemoving={deleteCoverMutation.isPending}
               helpText="Horizontal, 1200×400px recomendado"
             />
           </div>
         </div>
 
         {/* Operating Hours Section */}
-        <OperatingHoursEditor restaurantId={id} />
+        <OperatingHoursEditor restaurantId={id} slug={restaurant.slug} />
 
         {/* Social Networks Section */}
-        <RestaurantSocialsEditor restaurantId={id} />
+        <RestaurantSocialsEditor restaurantId={id} slug={restaurant.slug} />
 
         {/* Basic Info Section */}
         <div className="rounded-xl border border-[#2D3147] bg-[#1A1D27] p-6">
@@ -226,10 +284,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400">
+              <label htmlFor="slug" className="block text-sm font-medium text-gray-400">
                 Slug (URL fija, inmutable)
               </label>
               <input
+                id="slug"
                 type="text"
                 disabled
                 value={restaurant.slug}
@@ -261,23 +320,24 @@ export default function EditRestaurantPage() {
             Identidad visual
           </div>
           <div className="grid grid-cols-3 gap-4">
-            {[
-              { key: "primary_color" as const, label: "Color primario" },
-              { key: "secondary_color" as const, label: "Color secundario" },
-              { key: "accent_color" as const, label: "Color acento" },
-            ].map(({ key, label }) => (
+            {COLOR_FIELDS.map(({ key, label }) => (
               <div key={key}>
-                <label className="block text-xs font-medium text-gray-400">
+                <label
+                  htmlFor={`${key}-hex`}
+                  className="block text-xs font-medium text-gray-400"
+                >
                   {label}
                 </label>
                 <div className="mt-1 flex items-center gap-2">
                   <input
                     type="color"
-                    value={form[key] || "#000000"}
+                    aria-label={`${label} (selector visual)`}
+                    value={HEX_COLOR_RE.test(form[key] || "") ? form[key] : "#000000"}
                     onChange={(e) => updateField(key, e.target.value)}
                     className="h-9 w-9 shrink-0 cursor-pointer rounded-md border border-[#2D3147] bg-transparent p-0.5"
                   />
                   <input
+                    id={`${key}-hex`}
                     type="text"
                     value={form[key] || ""}
                     onChange={(e) => updateField(key, e.target.value)}
@@ -298,10 +358,11 @@ export default function EditRestaurantPage() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-300">
                 Teléfono
               </label>
               <input
+                id="phone"
                 type="text"
                 value={form.phone || ""}
                 onChange={(e) => updateField("phone", e.target.value)}
@@ -309,10 +370,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="whatsapp" className="block text-sm font-medium text-gray-300">
                 WhatsApp
               </label>
               <input
+                id="whatsapp"
                 type="text"
                 value={form.whatsapp || ""}
                 onChange={(e) => updateField("whatsapp", e.target.value)}
@@ -320,10 +382,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-300">
                 Email
               </label>
               <input
+                id="email"
                 type="email"
                 value={form.email || ""}
                 onChange={(e) => updateField("email", e.target.value)}
@@ -331,10 +394,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="website" className="block text-sm font-medium text-gray-300">
                 Sitio web
               </label>
               <input
+                id="website"
                 type="url"
                 value={form.website || ""}
                 onChange={(e) => updateField("website", e.target.value)}
@@ -352,10 +416,11 @@ export default function EditRestaurantPage() {
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="sm:col-span-2">
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="address" className="block text-sm font-medium text-gray-300">
                 Dirección
               </label>
               <input
+                id="address"
                 type="text"
                 value={form.address || ""}
                 onChange={(e) => updateField("address", e.target.value)}
@@ -363,10 +428,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="city" className="block text-sm font-medium text-gray-300">
                 Ciudad
               </label>
               <input
+                id="city"
                 type="text"
                 value={form.city || ""}
                 onChange={(e) => updateField("city", e.target.value)}
@@ -374,10 +440,11 @@ export default function EditRestaurantPage() {
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-300">
+              <label htmlFor="country" className="block text-sm font-medium text-gray-300">
                 País
               </label>
               <input
+                id="country"
                 type="text"
                 value={form.country || ""}
                 onChange={(e) => updateField("country", e.target.value)}

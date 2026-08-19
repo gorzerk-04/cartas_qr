@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef } from "react";
-import { UploadCloud, Image as ImageIcon, Loader2, RefreshCw } from "lucide-react";
+import { UploadCloud, Image as ImageIcon, Loader2, RefreshCw, Trash2 } from "lucide-react";
 import { getErrorMessage } from "../../lib/api-error";
 
 interface ImageUploaderProps {
@@ -11,6 +11,9 @@ interface ImageUploaderProps {
   onUpload: (file: File) => Promise<void>;
   isUploading: boolean;
   helpText?: string;
+  // Opcional: sin esto el uploader solo permite reemplazar la imagen, nunca quitarla.
+  onRemove?: () => Promise<void>;
+  isRemoving?: boolean;
 }
 
 export default function ImageUploader({
@@ -20,10 +23,22 @@ export default function ImageUploader({
   onUpload,
   isUploading,
   helpText = "PNG, JPG, WEBP hasta 5MB",
+  onRemove,
+  isRemoving = false,
 }: ImageUploaderProps) {
   const [dragActive, setDragActive] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleRemove = async () => {
+    if (!onRemove) return;
+    setError(null);
+    try {
+      await onRemove();
+    } catch (err) {
+      setError(getErrorMessage(err, "Error al quitar la imagen. Intenta de nuevo."));
+    }
+  };
 
   const handleFileChange = async (file: File | undefined) => {
     if (!file) return;
@@ -110,10 +125,12 @@ export default function ImageUploader({
           disabled={isUploading}
         />
 
-        {isUploading ? (
+        {isUploading || isRemoving ? (
           <div className="flex flex-col items-center gap-2 p-4 text-center">
             <Loader2 className="h-6 w-6 animate-spin text-[#6366F1]" />
-            <span className="text-xs text-gray-400">Subiendo...</span>
+            <span className="text-xs text-gray-400">
+              {isRemoving ? "Quitando..." : "Subiendo..."}
+            </span>
           </div>
         ) : currentImageUrl ? (
           <>
@@ -144,6 +161,19 @@ export default function ImageUploader({
           </div>
         )}
       </div>
+
+      {/* Fuera de la zona de arrastre a propósito: dentro, el onClick del contenedor
+          abriría el selector de archivos al intentar quitar la imagen. */}
+      {onRemove && currentImageUrl && !isUploading && !isRemoving && (
+        <button
+          type="button"
+          onClick={handleRemove}
+          className="inline-flex items-center gap-1.5 text-xs font-medium text-gray-400 hover:text-red-400 transition"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+          Quitar {label.toLowerCase()}
+        </button>
+      )}
     </div>
   );
 }

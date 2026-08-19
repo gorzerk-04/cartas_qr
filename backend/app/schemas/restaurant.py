@@ -1,8 +1,24 @@
-from pydantic import BaseModel, Field, EmailStr
+from pydantic import BaseModel, Field, EmailStr, field_validator
 from typing import Literal, Optional, List
 from datetime import datetime
 from uuid import UUID
 from decimal import Decimal
+import re
+
+# Los colores de marca se inyectan tal cual como CSS custom properties en la carta
+# pública (ver menu/[slug]/layout.tsx). Sin validar el formato, un valor cualquiera
+# ("rojo", un typo) se guardaba con 200 y rompía silenciosamente el color de la marca.
+HEX_COLOR_RE = re.compile(r"^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$")
+
+
+def validate_hex_color(value: Optional[str]) -> Optional[str]:
+    if value is None:
+        return value
+    if not HEX_COLOR_RE.match(value):
+        raise ValueError(
+            "El color debe estar en formato hexadecimal, por ejemplo #FF6B35"
+        )
+    return value
 
 
 class RestaurantBase(BaseModel):
@@ -26,7 +42,12 @@ class RestaurantBase(BaseModel):
 
 
 class RestaurantCreate(RestaurantBase):
-    pass
+    # Solo se valida en la entrada: RestaurantResponse también hereda de RestaurantBase,
+    # y validar ahí convertiría cualquier color inválido ya guardado en la base en un
+    # error 500 al leerlo, en vez de dejar que se pueda corregir desde el panel.
+    _validate_colors = field_validator(
+        "primary_color", "secondary_color", "accent_color"
+    )(validate_hex_color)
 
 
 class RestaurantUpdate(BaseModel):
@@ -46,6 +67,10 @@ class RestaurantUpdate(BaseModel):
     longitude: Optional[Decimal] = None
     is_active: Optional[bool] = None
     is_published: Optional[bool] = None
+
+    _validate_colors = field_validator(
+        "primary_color", "secondary_color", "accent_color"
+    )(validate_hex_color)
 
 
 class RestaurantResponse(RestaurantBase):

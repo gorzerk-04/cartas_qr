@@ -45,15 +45,31 @@ const PLATFORM_ICONS: Record<SocialPlatform, React.ComponentType<{ className?: s
 
 const ALL_PLATFORMS = Object.keys(PLATFORM_LABELS) as SocialPlatform[];
 
-interface RestaurantSocialsEditorProps {
-  restaurantId: string;
+// El <input type="url"> de este componente no dispara la validación nativa del navegador
+// porque, a diferencia de un campo dentro de un <form>, aquí no hay submit que validar
+// (ver comentario más abajo sobre el <div>). Se valida a mano antes de llamar a la API.
+function isValidHttpUrl(value: string): boolean {
+  try {
+    const parsed = new URL(value.trim());
+    return parsed.protocol === "http:" || parsed.protocol === "https:";
+  } catch {
+    return false;
+  }
 }
 
-export default function RestaurantSocialsEditor({ restaurantId }: RestaurantSocialsEditorProps) {
+const URL_ERROR = "El enlace debe ser una URL válida que empiece con http:// o https://";
+
+interface RestaurantSocialsEditorProps {
+  restaurantId: string;
+  // Solo para refrescar la carta pública tras cambiar los enlaces.
+  slug?: string;
+}
+
+export default function RestaurantSocialsEditor({ restaurantId, slug }: RestaurantSocialsEditorProps) {
   const { data: socials, isLoading } = useRestaurantSocials(restaurantId);
-  const createMutation = useCreateRestaurantSocial(restaurantId);
-  const updateMutation = useUpdateRestaurantSocial(restaurantId);
-  const deleteMutation = useDeleteRestaurantSocial(restaurantId);
+  const createMutation = useCreateRestaurantSocial(restaurantId, slug);
+  const updateMutation = useUpdateRestaurantSocial(restaurantId, slug);
+  const deleteMutation = useDeleteRestaurantSocial(restaurantId, slug);
 
   const [newPlatform, setNewPlatform] = useState<SocialPlatform | "">("");
   const [newUrl, setNewUrl] = useState("");
@@ -67,8 +83,12 @@ export default function RestaurantSocialsEditor({ restaurantId }: RestaurantSoci
   const handleAdd = async () => {
     if (!newPlatform || !newUrl) return;
     setError(null);
+    if (!isValidHttpUrl(newUrl)) {
+      setError(URL_ERROR);
+      return;
+    }
     try {
-      await createMutation.mutateAsync({ platform: newPlatform, url: newUrl });
+      await createMutation.mutateAsync({ platform: newPlatform, url: newUrl.trim() });
       setNewPlatform("");
       setNewUrl("");
     } catch (err: any) {
@@ -78,8 +98,13 @@ export default function RestaurantSocialsEditor({ restaurantId }: RestaurantSoci
 
   const handleSaveEdit = async (id: string) => {
     if (!editUrl) return;
+    setError(null);
+    if (!isValidHttpUrl(editUrl)) {
+      setError(URL_ERROR);
+      return;
+    }
     try {
-      await updateMutation.mutateAsync({ id, data: { url: editUrl } });
+      await updateMutation.mutateAsync({ id, data: { url: editUrl.trim() } });
       setEditingId(null);
     } catch (err: any) {
       setError(getErrorMessage(err, "Error al actualizar la red social"));

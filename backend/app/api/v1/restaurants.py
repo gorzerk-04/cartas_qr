@@ -157,6 +157,33 @@ async def upload_restaurant_logo(
     )
 
 
+@router.delete("/{id}/logo", response_model=RestaurantResponse)
+def delete_restaurant_logo(
+    *,
+    db: Session = Depends(get_db),
+    id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Quitar el logo del restaurante y borrar el archivo asociado.
+    """
+    restaurant = restaurant_repository.get(db, id=id)
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurante no encontrado"
+        )
+
+    if restaurant.logo_cloudinary_id:
+        cloudinary_service.delete_image(restaurant.logo_cloudinary_id)
+
+    return restaurant_repository.update(
+        db,
+        db_obj=restaurant,
+        obj_in={"logo_url": None, "logo_cloudinary_id": None}
+    )
+
+
 @router.post("/{id}/cover", response_model=RestaurantResponse)
 async def upload_restaurant_cover(
     *,
@@ -186,6 +213,33 @@ async def upload_restaurant_cover(
         db,
         db_obj=restaurant,
         obj_in={"cover_url": result["url"], "cover_cloudinary_id": result["public_id"]}
+    )
+
+
+@router.delete("/{id}/cover", response_model=RestaurantResponse)
+def delete_restaurant_cover(
+    *,
+    db: Session = Depends(get_db),
+    id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Quitar la imagen de portada del restaurante y borrar el archivo asociado.
+    """
+    restaurant = restaurant_repository.get(db, id=id)
+    if not restaurant:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Restaurante no encontrado"
+        )
+
+    if restaurant.cover_cloudinary_id:
+        cloudinary_service.delete_image(restaurant.cover_cloudinary_id)
+
+    return restaurant_repository.update(
+        db,
+        db_obj=restaurant,
+        obj_in={"cover_url": None, "cover_cloudinary_id": None}
     )
 
 

@@ -6,7 +6,8 @@ import {
   useQueryClient,
 } from "@tanstack/react-query";
 import { restaurantService } from "../services/restaurants";
-import { RestaurantCreate, RestaurantUpdate } from "../types";
+import { Restaurant, RestaurantCreate, RestaurantUpdate } from "../types";
+import { revalidatePublicMenu } from "../lib/revalidate-public-menu";
 
 export function useRestaurants(params?: {
   page?: number;
@@ -46,11 +47,12 @@ export function useUpdateRestaurant() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: RestaurantUpdate }) =>
       restaurantService.update(id, data),
-    onSuccess: (_data, variables) => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["restaurants"] });
       queryClient.invalidateQueries({
         queryKey: ["restaurant", variables.id],
       });
+      revalidatePublicMenu(data?.slug);
     },
   });
 }
@@ -66,32 +68,41 @@ export function useDeleteRestaurant() {
   });
 }
 
-export function useUploadRestaurantLogo() {
+// Las cuatro mutaciones de imagen comparten el mismo post-guardado: refrescar las queries
+// del panel y avisar a Next.js que la carta pública quedó obsoleta.
+function useRestaurantImageMutation(
+  mutationFn: (vars: { id: string; file?: File }) => Promise<Restaurant>
+) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      restaurantService.uploadLogo(id, file),
-    onSuccess: (_data, variables) => {
+    mutationFn,
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["restaurants"] });
       queryClient.invalidateQueries({
         queryKey: ["restaurant", variables.id],
       });
+      revalidatePublicMenu(data?.slug);
     },
   });
 }
 
-export function useUploadRestaurantCover() {
-  const queryClient = useQueryClient();
+export function useUploadRestaurantLogo() {
+  return useRestaurantImageMutation(({ id, file }) =>
+    restaurantService.uploadLogo(id, file as File)
+  );
+}
 
-  return useMutation({
-    mutationFn: ({ id, file }: { id: string; file: File }) =>
-      restaurantService.uploadCover(id, file),
-    onSuccess: (_data, variables) => {
-      queryClient.invalidateQueries({ queryKey: ["restaurants"] });
-      queryClient.invalidateQueries({
-        queryKey: ["restaurant", variables.id],
-      });
-    },
-  });
+export function useUploadRestaurantCover() {
+  return useRestaurantImageMutation(({ id, file }) =>
+    restaurantService.uploadCover(id, file as File)
+  );
+}
+
+export function useDeleteRestaurantLogo() {
+  return useRestaurantImageMutation(({ id }) => restaurantService.deleteLogo(id));
+}
+
+export function useDeleteRestaurantCover() {
+  return useRestaurantImageMutation(({ id }) => restaurantService.deleteCover(id));
 }
