@@ -1,5 +1,5 @@
 import { apiClient, setAccessToken } from "../lib/api-client";
-import { UserLogin } from "../types";
+import { ChangePasswordInput, UserLogin } from "../types";
 
 export const authService = {
   async login(credentials: UserLogin) {
@@ -17,6 +17,10 @@ export const authService = {
     } finally {
       setAccessToken(null);
     }
+  },
+
+  async changePassword(data: ChangePasswordInput) {
+    await apiClient.post("/auth/change-password", data);
   },
 
   async getMe() {

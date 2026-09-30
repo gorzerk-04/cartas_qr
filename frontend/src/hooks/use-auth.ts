@@ -4,9 +4,10 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { authService } from "../services/auth";
-import { UserLogin } from "../types";
+import { ChangePasswordInput, User, UserLogin } from "../types";
 import { getAccessToken, setAccessToken } from "../lib/api-client";
 import { getErrorMessage } from "../lib/api-error";
+import { can, isPlatformAdmin, landingPath } from "../lib/permissions";
 
 export function useAuth() {
   const queryClient = useQueryClient();
@@ -19,7 +20,7 @@ export function useAuth() {
     isLoading: isUserLoading,
     error,
     refetch: refetchUser,
-  } = useQuery({
+  } = useQuery<User>({
     queryKey: ["auth-user"],
     queryFn: authService.getMe,
     enabled: !!getAccessToken(),
@@ -45,9 +46,16 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: (credentials: UserLogin) => authService.login(credentials),
-    onSuccess: (data) => {
-      queryClient.setQueryData(["auth-user"], data.user);
-      router.push("/admin/dashboard");
+    onSuccess: async (data) => {
+      // La respuesta del login no trae los restaurantes asignados: /me sí.
+      let me: User = data.user;
+      try {
+        me = await authService.getMe();
+      } catch {
+        // Si /me falla se usa el usuario del login; el layout volverá a consultarlo
+      }
+      queryClient.setQueryData(["auth-user"], me);
+      router.push(landingPath(me));
     },
   });
 
@@ -60,14 +68,36 @@ export function useAuth() {
     },
   });
 
+  const currentUser = user || null;
+
   return {
-    user: user || null,
+    user: currentUser,
     isAuthenticated: !!user,
     isLoading: isUserLoading || isInitializing,
+    role: currentUser?.role ?? null,
+    isPlatformAdmin: isPlatformAdmin(currentUser),
+    restaurants: currentUser?.restaurants ?? [],
+    mustChangePassword: !!currentUser?.must_change_password,
+    can: (action: Parameters<typeof can>[1]) => can(currentUser, action),
     login: loginMutation.mutateAsync,
     isLoggingIn: loginMutation.isPending,
     loginError: loginMutation.error ? getErrorMessage(loginMutation.error, "Error al iniciar sesión") : null,
     logout: logoutMutation.mutate,
     isLoggingOut: logoutMutation.isPending,
   };
+}
+
+export function useChangePassword() {
+  const queryClient = useQueryClient();
+  const router = useRouter();
+
+  return useMutation({
+    mutationFn: (data: ChangePasswordInput) => authService.changePassword(data),
+    onSuccess: async () => {
+      // Refresca /me (must_change_password pasa a false) y entra al panel
+      const me = await authService.getMe();
+      queryClient.setQueryData(["auth-user"], me);
+      router.replace(landingPath(me));
+    },
+  });
 }

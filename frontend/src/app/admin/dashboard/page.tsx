@@ -14,7 +14,7 @@ import {
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
+  const { user, can } = useAuth();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
 
   const statCards = [
@@ -64,13 +64,15 @@ export default function DashboardPage() {
             </span>
           </p>
         </div>
-        <Link
-          href="/admin/restaurants/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#4F46E5] transition"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Restaurante
-        </Link>
+        {can("createRestaurant") && (
+          <Link
+            href="/admin/restaurants/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#4F46E5] transition"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Restaurante
+          </Link>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -115,16 +117,20 @@ export default function DashboardPage() {
       <div className="rounded-xl border border-[#2D3147] bg-[#1A1D27] p-6">
         <h2 className="text-lg font-semibold text-white">Acciones rápidas</h2>
         <p className="mt-1 text-sm text-gray-400">
-          Comienza creando tu primer restaurante para generar su carta QR.
+          {can("createRestaurant")
+            ? "Comienza creando tu primer restaurante para generar su carta QR."
+            : "Gestiona la carta, los horarios y el código QR de tu restaurante."}
         </p>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <Link
-            href="/admin/restaurants/new"
-            className="flex items-center gap-3 rounded-lg border border-dashed border-[#2D3147] p-4 text-sm text-gray-400 hover:border-[#6366F1] hover:text-[#6366F1] transition"
-          >
-            <UtensilsCrossed className="h-5 w-5" />
-            <span>Crear restaurante</span>
-          </Link>
+          {can("createRestaurant") && (
+            <Link
+              href="/admin/restaurants/new"
+              className="flex items-center gap-3 rounded-lg border border-dashed border-[#2D3147] p-4 text-sm text-gray-400 hover:border-[#6366F1] hover:text-[#6366F1] transition"
+            >
+              <UtensilsCrossed className="h-5 w-5" />
+              <span>Crear restaurante</span>
+            </Link>
+          )}
           <Link
             href="/admin/restaurants"
             className="flex items-center gap-3 rounded-lg border border-dashed border-[#2D3147] p-4 text-sm text-gray-400 hover:border-[#10B981] hover:text-[#10B981] transition"

@@ -25,6 +25,7 @@ import OperatingHoursEditor from "../../../../components/admin/operating-hours-e
 import RestaurantSocialsEditor from "../../../../components/admin/restaurant-socials-editor";
 import { getErrorMessage } from "../../../../lib/api-error";
 import { blankToNull } from "../../../../lib/forms";
+import { useAuth } from "../../../../hooks/use-auth";
 
 // Columnas que aceptan NULL en la base: vaciar su campo en el formulario debe borrarlas.
 // El resto (name, country y los tres colores) son NOT NULL, así que se omiten si quedan
@@ -50,6 +51,8 @@ const COLOR_FIELDS = [
 export default function EditRestaurantPage() {
   const params = useParams();
   const id = params.id as string;
+  const { can } = useAuth();
+  const canToggleActive = can("toggleActive");
 
   const { data: restaurant, isLoading: isLoadingRestaurant, error } = useRestaurant(id);
   const updateMutation = useUpdateRestaurant();
@@ -188,22 +191,26 @@ export default function EditRestaurantPage() {
         <div className="flex flex-col gap-4 rounded-xl border border-[#2D3147] bg-[#1A1D27] p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <span className="text-sm font-medium text-white">
-              Estado de la cuenta
+              {canToggleActive ? "Estado de la cuenta" : "Visibilidad de la carta"}
             </span>
             <p className="text-xs text-gray-400">
-              Controla si el restaurante está activo o deshabilitado
+              {canToggleActive
+                ? "Controla si el restaurante está activo o deshabilitado"
+                : "Controla si tu carta está publicada para tus clientes"}
             </p>
           </div>
           <div className="flex items-center gap-6">
-            <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
-              <input
-                type="checkbox"
-                checked={form.is_active}
-                onChange={(e) => updateField("is_active", e.target.checked)}
-                className="h-4 w-4 rounded border-[#2D3147] bg-[#0F1117] text-[#6366F1] focus:ring-[#6366F1]"
-              />
-              Activo
-            </label>
+            {canToggleActive && (
+              <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
+                <input
+                  type="checkbox"
+                  checked={form.is_active}
+                  onChange={(e) => updateField("is_active", e.target.checked)}
+                  className="h-4 w-4 rounded border-[#2D3147] bg-[#0F1117] text-[#6366F1] focus:ring-[#6366F1]"
+                />
+                Activo
+              </label>
+            )}
 
             <label className="flex items-center gap-2 text-sm text-gray-300 cursor-pointer">
               <input
@@ -295,6 +302,11 @@ export default function EditRestaurantPage() {
                 value={restaurant.slug}
                 className="mt-1 block w-full cursor-not-allowed rounded-lg border border-[#2D3147] bg-[#0F1117]/50 px-3 py-2.5 text-sm text-gray-500 font-mono"
               />
+              {!canToggleActive && (
+                <p className="mt-1 text-xs text-gray-500">
+                  El slug no se puede cambiar: los códigos QR ya impresos dejarían de funcionar.
+                </p>
+              )}
             </div>
             <div>
               <label

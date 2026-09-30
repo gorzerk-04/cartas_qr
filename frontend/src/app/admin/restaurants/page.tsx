@@ -21,17 +21,20 @@ import {
 import { Restaurant } from "../../../types";
 import ConfirmDialog from "../../../components/admin/confirm-dialog";
 import { useEscapeKey } from "../../../hooks/use-escape-key";
+import { useAuth } from "../../../hooks/use-auth";
 
 function ActionsMenu({
   restaurant,
   openMenu,
   setOpenMenu,
   onDeleteRequest,
+  canDelete,
 }: {
   restaurant: Restaurant;
   openMenu: string | null;
   setOpenMenu: (id: string | null) => void;
   onDeleteRequest: () => void;
+  canDelete: boolean;
 }) {
   const isOpen = openMenu === restaurant.id;
   useEscapeKey(() => setOpenMenu(null), isOpen);
@@ -74,17 +77,19 @@ function ActionsMenu({
               <ExternalLink className="h-4 w-4" />
               Ver carta
             </a>
-            <button
-              role="menuitem"
-              onClick={() => {
-                onDeleteRequest();
-                setOpenMenu(null);
-              }}
-              className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
-            >
-              <Trash2 className="h-4 w-4" />
-              Eliminar
-            </button>
+            {canDelete && (
+              <button
+                role="menuitem"
+                onClick={() => {
+                  onDeleteRequest();
+                  setOpenMenu(null);
+                }}
+                className="flex w-full items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                Eliminar
+              </button>
+            )}
           </div>
         </>
       )}
@@ -93,6 +98,9 @@ function ActionsMenu({
 }
 
 export default function RestaurantsPage() {
+  const { can } = useAuth();
+  const canCreate = can("createRestaurant");
+  const canDelete = can("deleteRestaurant");
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
@@ -130,13 +138,15 @@ export default function RestaurantsPage() {
             Gestiona los restaurantes y sus cartas digitales
           </p>
         </div>
-        <Link
-          href="/admin/restaurants/new"
-          className="inline-flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#4F46E5] transition"
-        >
-          <Plus className="h-4 w-4" />
-          Nuevo Restaurante
-        </Link>
+        {canCreate && (
+          <Link
+            href="/admin/restaurants/new"
+            className="inline-flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-[#4F46E5] transition"
+          >
+            <Plus className="h-4 w-4" />
+            Nuevo Restaurante
+          </Link>
+        )}
       </div>
 
       {/* Search Bar */}
@@ -175,9 +185,11 @@ export default function RestaurantsPage() {
           <p className="mt-1 text-sm text-gray-400">
             {search
               ? `No se encontraron restaurantes para "${search}"`
-              : "Comienza creando tu primer restaurante"}
+              : canCreate
+                ? "Comienza creando tu primer restaurante"
+                : "Todavía no tienes restaurantes asignados. Pide a un administrador que te asigne uno."}
           </p>
-          {!search && (
+          {!search && canCreate && (
             <Link
               href="/admin/restaurants/new"
               className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#6366F1] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#4F46E5] transition"
@@ -273,6 +285,7 @@ export default function RestaurantsPage() {
                         openMenu={openMenu}
                         setOpenMenu={setOpenMenu}
                         onDeleteRequest={() => setDeleteConfirm(restaurant.id)}
+                        canDelete={canDelete}
                       />
                     </td>
                   </tr>
@@ -306,6 +319,7 @@ export default function RestaurantsPage() {
                     openMenu={openMenu}
                     setOpenMenu={setOpenMenu}
                     onDeleteRequest={() => setDeleteConfirm(restaurant.id)}
+                        canDelete={canDelete}
                   />
                 </div>
                 <div className="mt-3 flex items-center gap-2">

@@ -11,7 +11,7 @@ export default function AdminLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, isPlatformAdmin, mustChangePassword } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -19,12 +19,25 @@ export default function AdminLayout({
 
   // Allow the login page to render without auth check
   const isLoginPage = pathname === "/admin/login";
+  const isChangePasswordPage = pathname === "/admin/change-password";
+  // Rutas solo para administradores de plataforma (la seguridad real está en el backend)
+  const isAdminOnlyRoute = pathname === "/admin/users" || pathname.startsWith("/admin/users/");
+  const mustRedirectToChangePassword = isAuthenticated && mustChangePassword && !isChangePasswordPage;
+  const mustRedirectToDashboard = isAuthenticated && !isPlatformAdmin && isAdminOnlyRoute;
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated && !isLoginPage) {
       router.push("/admin/login");
     }
   }, [isAuthenticated, isLoading, isLoginPage, router]);
+
+  useEffect(() => {
+    if (mustRedirectToChangePassword) {
+      router.replace("/admin/change-password");
+    } else if (mustRedirectToDashboard) {
+      router.replace("/admin/dashboard");
+    }
+  }, [mustRedirectToChangePassword, mustRedirectToDashboard, router]);
 
   // Cierra el drawer mobile al navegar a otra ruta del panel
   useEffect(() => {
@@ -49,6 +62,16 @@ export default function AdminLayout({
   // Not authenticated and not login page — handled by redirect above
   if (!isAuthenticated) {
     return null;
+  }
+
+  // Redirigiendo (contraseña temporal pendiente o ruta solo para admin): no pintar nada
+  if (mustRedirectToChangePassword || mustRedirectToDashboard) {
+    return null;
+  }
+
+  // Cambio de contraseña: pantalla propia, sin el shell del panel
+  if (isChangePasswordPage) {
+    return <>{children}</>;
   }
 
   return (

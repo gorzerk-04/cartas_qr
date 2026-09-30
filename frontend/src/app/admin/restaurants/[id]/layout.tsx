@@ -15,7 +15,7 @@ export default function RestaurantDetailLayout({
   const pathname = usePathname();
   const id = params.id as string;
 
-  const { data: restaurant } = useRestaurant(id);
+  const { data: restaurant, isError, isLoading } = useRestaurant(id);
 
   const tabs = [
     { label: "Info General", href: `/admin/restaurants/${id}` },
@@ -36,7 +36,7 @@ export default function RestaurantDetailLayout({
           </Link>
           <div>
             <h1 className="text-2xl font-bold tracking-tight text-white">
-              {restaurant ? restaurant.name : "Cargando..."}
+              {restaurant ? restaurant.name : isError && !isLoading ? "Restaurante no encontrado" : "Cargando..."}
             </h1>
             {restaurant && (
               <p className="mt-0.5 text-xs text-gray-400 font-mono">

@@ -5,6 +5,9 @@ from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.core.database import Base
 from app.models.base import AuditMixin
+# Necesario para resolver relationship("Restaurant") al importar este modelo de forma aislada
+# (p. ej. desde seed.py, que solo importa User).
+from app.models.restaurant import Restaurant  # noqa: F401
 
 
 class MemberRole(str, enum.Enum):

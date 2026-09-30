@@ -3,13 +3,62 @@ export interface UserLogin {
   password: string;
 }
 
+export type UserRole = "platform_admin" | "restaurant_owner";
+
+export interface RestaurantSummary {
+  id: string;
+  name: string;
+  slug: string;
+}
+
 export interface User {
   id: string;
   username: string;
   email: string;
   is_superadmin: boolean;
+  role: UserRole;
+  must_change_password: boolean;
+  // Solo viene en /auth/me. Para el admin es [] (ve todo).
+  restaurants?: RestaurantSummary[] | null;
   last_login_at?: string;
   created_at: string;
+}
+
+// Usuario tal como lo devuelve la API de gestión (/admin/users)
+export interface ManagedUser {
+  id: string;
+  username: string;
+  email: string;
+  role: UserRole;
+  is_active: boolean;
+  must_change_password: boolean;
+  last_login_at?: string | null;
+  created_at: string;
+  restaurants: RestaurantSummary[];
+}
+
+// Respuesta de alta y reseteo: la contraseña temporal se muestra UNA sola vez
+export interface ManagedUserWithTempPassword extends ManagedUser {
+  temp_password: string;
+}
+
+export interface UserCreateInput {
+  email: string;
+  username: string;
+  role: UserRole;
+  restaurant_ids: string[];
+}
+
+export interface UserUpdateInput {
+  is_active?: boolean;
+  role?: UserRole;
+  email?: string;
+  username?: string;
+}
+
+export interface ChangePasswordInput {
+  current_password: string;
+  new_password: string;
 }
 
 export interface Restaurant {

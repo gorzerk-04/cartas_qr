@@ -132,3 +132,21 @@ cd frontend && pnpm dev
 # Terminal 3 (credenciales del admin sembrado)
 cd frontend && E2E_ADMIN_PASSWORD='<tu-contraseña>' pnpm test:e2e
 ```
+
+#### Suite E2E de roles (`roles.spec.ts`)
+
+Comprueba en el navegador que un **dueño** solo ve su restaurante (y no ve "Usuarios"), que un restaurante ajeno aparece como "no encontrado", y que el **admin** ve todo y puede dar de alta un dueño (contraseña temporal mostrada una sola vez y cambio obligatorio al primer ingreso).
+
+Necesita datos de prueba: `backend/scripts/seed_e2e.py` (idempotente) crea el admin, un dueño y los restaurantes "E2E Propio" (asignado al dueño) y "E2E Ajeno" (sin asignar). **Se niega a correr con `ENVIRONMENT=production`**; úsalo solo sobre una base local de desarrollo.
+
+```bash
+# Desde backend/, con el venv activo y DATABASE_URL apuntando a tu base LOCAL
+E2E_ADMIN_PASSWORD='<clave-admin>' E2E_OWNER_PASSWORD='<clave-dueño>' python scripts/seed_e2e.py
+
+# Con backend (8000) y frontend (3000) levantados, desde frontend/
+E2E_ADMIN_PASSWORD='<clave-admin>' E2E_OWNER_PASSWORD='<clave-dueño>' pnpm test:e2e
+```
+
+Variables opcionales: `E2E_ADMIN_USERNAME` (def. `admin`), `E2E_OWNER_USERNAME` (def. `e2e_owner`), `E2E_OWNER_EMAIL`, `E2E_API_URL` (def. `http://localhost:8000/api/v1`).
+
+> El login tiene rate limit (5 intentos por minuto por IP). `roles.spec.ts` inicia sesión por la API una vez por rol y, si encuentra un 429, espera 62 s y reintenta, así que una corrida completa puede tardar más de un minuto. Si repites la suite completa en menos de un minuto, los tests de login de `auth.spec.ts` pueden fallar por el mismo límite: espera y vuelve a correr.
