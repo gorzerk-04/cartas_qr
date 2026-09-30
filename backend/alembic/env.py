@@ -16,6 +16,8 @@ from app.models.category import Category
 from app.models.product import Product
 from app.models.restaurant_social import RestaurantSocial
 from app.models.restaurant_member import RestaurantMember
+from app.models.restaurant_customer import RestaurantCustomer
+from app.models.loyalty import LoyaltyProgram, LoyaltyRedemption, LoyaltyVisit
 
 # this is the Alembic Config object, which provides access to the values within the .ini file in use.
 config = context.config

@@ -60,6 +60,12 @@ class PublicCategoryItem(BaseModel):
         from_attributes = True
 
 
+class PublicLoyaltyItem(BaseModel):
+    # Nunca incluye datos de comensales
+    visits_required: int
+    reward_description: str
+
+
 class PublicRestaurantResponse(BaseModel):
     id: UUID
     name: str
@@ -84,3 +90,4 @@ class PublicRestaurantResponse(BaseModel):
 
     class Config:
         from_attributes = True
+    loyalty: Optional[PublicLoyaltyItem] = None

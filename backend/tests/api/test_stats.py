@@ -42,6 +42,10 @@ def test_stats_empty(client, db):
         "total_restaurants": 0,
         "published_restaurants": 0,
         "qr_generated_count": 0,
+        # Campos de fidelización (Fase 3)
+        "customers_total": 0,
+        "loyalty_visits_month": 0,
+        "loyalty_redemptions_month": 0,
     }
 
 

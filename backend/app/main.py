@@ -15,6 +15,8 @@ from app.api.v1.restaurant_socials import router as restaurant_socials_router
 from app.api.v1.public import router as public_router
 from app.api.v1.stats import router as stats_router
 from app.api.v1.users import router as users_router
+from app.api.v1.customers import router as customers_router
+from app.api.v1.loyalty import router as loyalty_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -51,6 +53,8 @@ app.include_router(restaurant_socials_router, prefix="/api/v1/admin/restaurants"
 app.include_router(public_router, prefix="/api/v1/public", tags=["🌎 Public"])
 app.include_router(stats_router, prefix="/api/v1/admin", tags=["📊 Stats"])
 app.include_router(users_router, prefix="/api/v1/admin/users", tags=["👥 Users"])
+app.include_router(customers_router, prefix="/api/v1/admin/restaurants", tags=["🧑 Customers"])
+app.include_router(loyalty_router, prefix="/api/v1/admin/restaurants", tags=["🎁 Loyalty"])
 
 
 @app.get("/health", tags=["❤️ Health"])
