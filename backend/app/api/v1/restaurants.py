@@ -2,7 +2,14 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import (
+    get_db,
+    get_current_user,
+    accessible_restaurant_by_id,
+    accessible_restaurant_ids,
+    ensure_platform_admin,
+)
+from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.schemas.restaurant import (
     RestaurantCreate,
@@ -28,8 +35,9 @@ def create_restaurant(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Crear un nuevo restaurante. Solo administradores autorizados.
+    Crear un nuevo restaurante. Solo administradores de plataforma.
     """
+    ensure_platform_admin(current_user)
     return restaurant_service.create_restaurant(db, obj_in=obj_in, user_id=current_user.id)
 
 
@@ -54,7 +62,8 @@ def list_restaurants(
         limit=limit,
         search=search,
         is_active=is_active,
-        is_published=is_published
+        is_published=is_published,
+        restaurant_ids=accessible_restaurant_ids(db, current_user),
     )
     
     total_pages = (total + limit - 1) // limit
@@ -77,17 +86,12 @@ def get_restaurant_by_id(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    restaurant: Restaurant = Depends(accessible_restaurant_by_id),
     current_user: User = Depends(get_current_user)
 ):
     """
     Obtener detalle de restaurante por su ID.
     """
-    restaurant = restaurant_repository.get(db, id=id)
-    if not restaurant:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Restaurante no encontrado"
-        )
     return restaurant
 
 
@@ -96,12 +100,27 @@ def update_restaurant(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    restaurant: Restaurant = Depends(accessible_restaurant_by_id),
     obj_in: RestaurantUpdate,
     current_user: User = Depends(get_current_user)
 ):
     """
     Actualizar datos de un restaurante. El slug es inmutable y será ignorado.
+
+    Un dueño no puede cambiar `slug` ni `is_active` (403); sí puede publicar/despublicar.
     """
+    if not current_user.is_platform_admin:
+        sent = obj_in.model_dump(exclude_unset=True)
+        if "slug" in sent and sent["slug"] != restaurant.slug:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="No puedes cambiar el slug: rompería los códigos QR ya impresos",
+            )
+        if "is_active" in sent and sent["is_active"] != restaurant.is_active:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Solo un administrador de plataforma puede activar o suspender un restaurante",
+            )
     return restaurant_service.update_restaurant(db, id=id, obj_in=obj_in)
 
 
@@ -110,11 +129,13 @@ def delete_restaurant(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    restaurant: Restaurant = Depends(accessible_restaurant_by_id),
     current_user: User = Depends(get_current_user)
 ):
     """
-    Eliminar un restaurante (Soft Delete).
+    Eliminar un restaurante (Soft Delete). Solo administradores de plataforma.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(
@@ -130,6 +151,7 @@ async def upload_restaurant_logo(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    _access: Restaurant = Depends(accessible_restaurant_by_id),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
@@ -162,6 +184,7 @@ def delete_restaurant_logo(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    _access: Restaurant = Depends(accessible_restaurant_by_id),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -189,6 +212,7 @@ async def upload_restaurant_cover(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    _access: Restaurant = Depends(accessible_restaurant_by_id),
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user)
 ):
@@ -221,6 +245,7 @@ def delete_restaurant_cover(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    _access: Restaurant = Depends(accessible_restaurant_by_id),
     current_user: User = Depends(get_current_user)
 ):
     """
@@ -248,6 +273,7 @@ async def generate_restaurant_qr(
     *,
     db: Session = Depends(get_db),
     id: UUID,
+    _access: Restaurant = Depends(accessible_restaurant_by_id),
     obj_in: QRGenerateRequest,
     current_user: User = Depends(get_current_user)
 ):

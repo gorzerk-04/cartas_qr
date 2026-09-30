@@ -2,7 +2,8 @@ from typing import Optional, List
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.schemas.category import (
     CategoryCreate,
@@ -29,6 +30,7 @@ def create_category(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     obj_in: CategoryCreate,
     current_user: User = Depends(get_current_user),
 ):
@@ -44,6 +46,7 @@ def list_categories(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     is_active: Optional[bool] = None,
     current_user: User = Depends(get_current_user),
 ):
@@ -62,6 +65,7 @@ def reorder_categories(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     body: CategoriesReorderRequest,
     current_user: User = Depends(get_current_user),
 ):
@@ -77,6 +81,7 @@ def get_category(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     current_user: User = Depends(get_current_user),
 ):
@@ -95,6 +100,7 @@ def update_category(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     obj_in: CategoryUpdate,
     current_user: User = Depends(get_current_user),
@@ -112,6 +118,7 @@ def delete_category(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     current_user: User = Depends(get_current_user),
 ):
@@ -127,6 +134,7 @@ async def upload_category_image(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),

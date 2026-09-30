@@ -11,6 +11,17 @@ class UserRole(str, enum.Enum):
     RESTAURANT_OWNER = "restaurant_owner"
 
 
+def _default_role(context) -> "UserRole":
+    """Compatibilidad: un usuario creado con is_superadmin=True nace como platform_admin.
+
+    Cualquier otro alta es restaurant_owner (mínimo privilegio). El acceso en runtime
+    se decide solo por `role`; `is_superadmin` no se consulta.
+    """
+    if context.get_current_parameters().get("is_superadmin"):
+        return UserRole.PLATFORM_ADMIN
+    return UserRole.RESTAURANT_OWNER
+
+
 class User(Base, AuditMixin):
     __tablename__ = "users"
 
@@ -23,7 +34,7 @@ class User(Base, AuditMixin):
     # Mínimo privilegio por defecto: un usuario nuevo es dueño sin restaurantes asignados.
     role = Column(
         SAEnum(UserRole, name="user_role", values_callable=lambda e: [m.value for m in e]),
-        default=UserRole.RESTAURANT_OWNER,
+        default=_default_role,
         server_default=UserRole.RESTAURANT_OWNER.value,
         nullable=False,
     )
@@ -37,3 +48,7 @@ class User(Base, AuditMixin):
     @property
     def is_platform_admin(self) -> bool:
         return self.role == UserRole.PLATFORM_ADMIN
+
+
+# Registra el modelo referenciado por `memberships` (evita depender del orden de imports).
+from app.models.restaurant_member import RestaurantMember  # noqa: E402,F401

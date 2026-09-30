@@ -3,7 +3,8 @@ from uuid import UUID
 from datetime import time as dt_time
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.repositories.restaurant import restaurant_repository
 from app.repositories.operating_hour import operating_hour_repository
@@ -31,6 +32,7 @@ def get_operating_hours(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -50,6 +52,7 @@ def update_operating_hours(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     body: OperatingHoursBulkUpdate,
     current_user: User = Depends(get_current_user),
 ):
