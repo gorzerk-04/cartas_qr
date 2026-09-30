@@ -4,9 +4,10 @@ import React, { useState, useEffect, Suspense } from "react";
 import { useAuth } from "../../../hooks/use-auth";
 import { Eye, EyeOff, Lock, User as UserIcon, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { landingPath } from "../../../lib/permissions";
 
 function LoginForm() {
-  const { login, isLoggingIn, loginError, isAuthenticated, isLoading } = useAuth();
+  const { login, isLoggingIn, loginError, isAuthenticated, isLoading, user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -24,9 +25,9 @@ function LoginForm() {
 
   useEffect(() => {
     if (isAuthenticated && !isLoading) {
-      router.push("/admin/dashboard");
+      router.push(landingPath(user));
     }
-  }, [isAuthenticated, isLoading, router]);
+  }, [isAuthenticated, isLoading, user, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

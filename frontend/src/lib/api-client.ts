@@ -1,4 +1,5 @@
 import axios from "axios";
+import { getErrorCode } from "./api-error";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -55,6 +56,18 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+
+    // Contraseña temporal pendiente de cambio: llevar al usuario a cambiarla. Un 403 no
+    // dispara el refresh (solo el 401), así que no hay bucle.
+    if (
+      error.response?.status === 403 &&
+      getErrorCode(error) === "PASSWORD_CHANGE_REQUIRED" &&
+      typeof window !== "undefined" &&
+      window.location.pathname !== "/admin/change-password"
+    ) {
+      window.location.href = "/admin/change-password";
+      return Promise.reject(error);
+    }
 
     // Check if error is 401, not a login attempt, and not already retried
     if (

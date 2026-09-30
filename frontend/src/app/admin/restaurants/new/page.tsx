@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCreateRestaurant } from "../../../../hooks/use-restaurants";
 import { RestaurantCreate } from "../../../../types";
 import { getErrorMessage } from "../../../../lib/api-error";
+import { useAuth } from "../../../../hooks/use-auth";
 import { omitEmptyStrings } from "../../../../lib/forms";
 import {
   ArrowLeft,
@@ -31,6 +32,15 @@ function slugify(text: string): string {
 export default function NewRestaurantPage() {
   const router = useRouter();
   const createMutation = useCreateRestaurant();
+  const { can, isLoading: isAuthLoading } = useAuth();
+  const canCreate = can("createRestaurant");
+
+  // Solo un administrador puede crear restaurantes (el backend responde 403 al dueño)
+  useEffect(() => {
+    if (!isAuthLoading && !canCreate) {
+      router.replace("/admin/restaurants");
+    }
+  }, [isAuthLoading, canCreate, router]);
 
   const [form, setForm] = useState<RestaurantCreate>({
     name: "",

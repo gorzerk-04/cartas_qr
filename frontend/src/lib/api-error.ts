@@ -9,6 +9,12 @@ export function getErrorMessage(error: unknown, fallback: string): string {
 
   if (typeof detail === "string") return detail;
 
+  // Errores con código: { code, message } (ej. PASSWORD_CHANGE_REQUIRED)
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const message = (detail as { message?: unknown }).message;
+    if (typeof message === "string" && message.length > 0) return message;
+  }
+
   if (Array.isArray(detail)) {
     const messages = detail
       .map((item) => (item && typeof item === "object" ? item.msg : null))
@@ -17,4 +23,14 @@ export function getErrorMessage(error: unknown, fallback: string): string {
   }
 
   return fallback;
+}
+
+// Código identificable del error (detail.code) cuando el backend lo envía.
+export function getErrorCode(error: unknown): string | null {
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail;
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    const code = (detail as { code?: unknown }).code;
+    if (typeof code === "string") return code;
+  }
+  return null;
 }

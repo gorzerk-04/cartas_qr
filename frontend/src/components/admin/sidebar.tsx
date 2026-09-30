@@ -7,6 +7,7 @@ import {
   LayoutDashboard,
   UtensilsCrossed,
   QrCode,
+  Users,
   LogOut,
   ChevronLeft,
   Menu,
@@ -15,7 +16,14 @@ import {
 import { useAuth } from "../../hooks/use-auth";
 import { useEscapeKey } from "../../hooks/use-escape-key";
 
-const navItems = [
+interface NavItem {
+  label: string;
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  adminOnly?: boolean;
+}
+
+const navItems: NavItem[] = [
   {
     label: "Dashboard",
     href: "/admin/dashboard",
@@ -31,6 +39,12 @@ const navItems = [
     href: "/admin/qr",
     icon: QrCode,
   },
+  {
+    label: "Usuarios",
+    href: "/admin/users",
+    icon: Users,
+    adminOnly: true,
+  },
 ];
 
 interface SidebarProps {
@@ -42,7 +56,8 @@ interface SidebarProps {
 
 export default function Sidebar({ isCollapsed, onToggle, mobileOpen, onMobileClose }: SidebarProps) {
   const pathname = usePathname();
-  const { logout, isLoggingOut, user } = useAuth();
+  const { logout, isLoggingOut, user, isPlatformAdmin } = useAuth();
+  const visibleItems = navItems.filter((item) => !item.adminOnly || isPlatformAdmin);
 
   useEscapeKey(onMobileClose, mobileOpen);
 
@@ -93,7 +108,7 @@ export default function Sidebar({ isCollapsed, onToggle, mobileOpen, onMobileClo
 
         {/* Navigation */}
         <nav className="flex-1 space-y-1 p-3">
-          {navItems.map((item) => {
+          {visibleItems.map((item) => {
             const isActive =
               pathname === item.href || pathname.startsWith(item.href + "/");
             return (
@@ -127,6 +142,9 @@ export default function Sidebar({ isCollapsed, onToggle, mobileOpen, onMobileClo
                 {user.username}
               </p>
               <p className="text-[10px] text-gray-500 truncate">{user.email}</p>
+              <p className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-[#6366F1]">
+                {isPlatformAdmin ? "Administrador" : "Dueño"}
+              </p>
             </div>
           )}
           <button
