@@ -1,12 +1,27 @@
 from datetime import timedelta
 from fastapi import APIRouter, Depends, HTTPException, Response, Request, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user_allow_password_change
 from app.core.config import settings
 from app.core.limiter import limiter
-from app.core.security import create_access_token, create_refresh_token, decode_token
+from app.core.security import (
+    create_access_token,
+    create_refresh_token,
+    decode_token,
+    get_password_hash,
+    verify_password,
+)
 from app.models.user import User
-from app.schemas.auth import UserLogin, TokenResponse, TokenResponseData, UserResponse
+from app.schemas.auth import (
+    ChangePasswordRequest,
+    RestaurantSummary,
+    TokenResponse,
+    TokenResponseData,
+    UserLogin,
+    UserResponse,
+)
+from app.repositories.restaurant import restaurant_repository
+from app.repositories.restaurant_member import restaurant_member_repository
 from app.services.auth import auth_service
 from app.repositories.user import user_repository
 
@@ -133,7 +148,51 @@ def logout(response: Response):
 
 
 @router.get("/me")
-def get_me(current_user: User = Depends(get_current_user)):
-    return {
-        "data": UserResponse.model_validate(current_user)
-    }
+def get_me(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_allow_password_change),
+):
+    data = UserResponse.model_validate(current_user)
+    if current_user.is_platform_admin:
+        # El admin ve todos los restaurantes: no hace falta listarlos
+        data.restaurants = []
+    else:
+        restaurants = []
+        for rid in restaurant_member_repository.restaurant_ids_for_user(db, current_user.id):
+            r = restaurant_repository.get(db, id=rid)
+            if r:
+                restaurants.append(RestaurantSummary.model_validate(r))
+        data.restaurants = restaurants
+    return {"data": data}
+
+
+MIN_PASSWORD_LENGTH = 10
+
+
+@router.post("/change-password", status_code=status.HTTP_204_NO_CONTENT)
+@limiter.limit("5/minute")
+def change_password(
+    request: Request,
+    body: ChangePasswordRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_allow_password_change),
+):
+    if not verify_password(body.current_password, current_user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="La contraseña actual es incorrecta",
+        )
+    if len(body.new_password) < MIN_PASSWORD_LENGTH:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=f"La nueva contraseña debe tener al menos {MIN_PASSWORD_LENGTH} caracteres",
+        )
+    if body.new_password == body.current_password:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="La nueva contraseña debe ser distinta de la actual",
+        )
+    current_user.hashed_password = get_password_hash(body.new_password)
+    current_user.must_change_password = False
+    db.add(current_user)
+    db.commit()

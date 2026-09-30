@@ -2,7 +2,8 @@ from typing import Optional
 from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, status, Query, File, UploadFile
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.models.product import ProductStatus
 from app.schemas.product import (
@@ -25,6 +26,7 @@ def create_product(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     obj_in: ProductCreate,
     current_user: User = Depends(get_current_user),
 ):
@@ -39,6 +41,7 @@ def list_products(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     page: int = Query(1, ge=1),
     limit: int = Query(20, ge=1, le=100),
     search: Optional[str] = None,
@@ -80,6 +83,7 @@ def reorder_products(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     body: ProductsReorderRequest,
     current_user: User = Depends(get_current_user),
 ):
@@ -95,6 +99,7 @@ def get_product(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     current_user: User = Depends(get_current_user),
 ):
@@ -112,6 +117,7 @@ def update_product(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     obj_in: ProductUpdate,
     current_user: User = Depends(get_current_user),
@@ -127,6 +133,7 @@ def delete_product(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     current_user: User = Depends(get_current_user),
 ):
@@ -142,6 +149,7 @@ def update_product_status(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     body: ProductStatusUpdate,
     current_user: User = Depends(get_current_user),
@@ -157,6 +165,7 @@ async def upload_product_image(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),

@@ -19,6 +19,10 @@ class AuthService:
         
         if not verify_password(password, user.hashed_password):
             return None
+
+        # Un usuario desactivado no puede iniciar sesión (mismo 401 genérico que una clave errónea)
+        if not user.is_active:
+            return None
             
         # Update last login
         user.last_login_at = datetime.utcnow()

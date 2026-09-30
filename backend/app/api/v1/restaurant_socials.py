@@ -2,7 +2,8 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user
+from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.schemas.restaurant_social import (
     RestaurantSocialCreate,
@@ -20,6 +21,7 @@ def create_social(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     obj_in: RestaurantSocialCreate,
     current_user: User = Depends(get_current_user),
 ):
@@ -34,6 +36,7 @@ def list_socials(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     current_user: User = Depends(get_current_user),
 ):
     """
@@ -47,6 +50,7 @@ def update_social(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     obj_in: RestaurantSocialUpdate,
     current_user: User = Depends(get_current_user),
@@ -62,6 +66,7 @@ def delete_social(
     *,
     db: Session = Depends(get_db),
     restaurant_id: UUID,
+    _restaurant: Restaurant = Depends(accessible_restaurant),
     id: UUID,
     current_user: User = Depends(get_current_user),
 ):
