@@ -85,7 +85,7 @@ Alternativa sin Docker Compose: frontend en Vercel, backend en Fly.io, base de d
 ### Requisitos
 
 - Python 3.10+
-- Node.js 20+
+- Node.js 22+
 - Docker y Docker Compose (opcional: solo si se quiere una base Postgres real en vez del fallback a SQLite)
 
 ### Backend
