@@ -166,16 +166,16 @@ Para poder entrar al panel de administración necesitás un usuario. El proyecto
 1. En el dashboard de Render, entrá a tu servicio del backend y buscá la pestaña **Shell** (arriba, junto a "Logs", "Environment", etc.).
 2. Si la ves disponible, hacé clic, se va a abrir una terminal dentro del navegador. Escribí:
    ```
-   python seed.py
+   SEED_ADMIN_PASSWORD='elegí-una-contraseña-larga' python seed.py
    ```
    y presioná Enter. Te debería aparecer un mensaje confirmando que se creó el usuario `admin`.
 3. **Si no ves la pestaña Shell** (algunos planes gratuitos no la incluyen), pedile ayuda a quien te pasó el proyecto para correr ese comando por vos, o probá subir temporalmente tu plan de Render solo para este paso puntual y después volver a bajarlo.
 
 Los datos para entrar por primera vez son:
 - **Usuario:** `admin`
-- **Contraseña:** `SuperSecure123!`
+- **Contraseña:** la que definiste en la variable `SEED_ADMIN_PASSWORD` (paso anterior)
 
-**Importante:** esta es una contraseña de fábrica, conocida por cualquiera que lea el código del proyecto. Iniciá sesión y, si el sistema tiene una opción para cambiar la contraseña, cambiala apenas puedas.
+**Importante:** el script de semilla no arranca si `SEED_ADMIN_PASSWORD` no está definida, así que no existe una contraseña de fábrica. Elegí una contraseña larga y única.
 
 ### Paso 8 — Verificar que todo funciona
 
@@ -191,7 +191,7 @@ Los datos para entrar por primera vez son:
    ```
    https://menuqr-tuempresa.vercel.app/admin/login
    ```
-   Iniciá sesión con `admin` / `SuperSecure123!` (o la contraseña que hayas cambiado).
+   Iniciá sesión con `admin` y la contraseña que definiste en `SEED_ADMIN_PASSWORD`.
 3. Una vez adentro, creá un restaurante de prueba y generá su código QR.
 4. Abrí el link público del menú de ese restaurante (algo como `https://menuqr-tuempresa.vercel.app/menu/nombre-del-restaurante`) y confirmá que se ve bien.
 5. Subí una foto de prueba a un plato y confirmá que se ve — si esto falla, revisá el Paso 2 (Cloudinary).
