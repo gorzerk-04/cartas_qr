@@ -28,6 +28,7 @@ export default function AdminLayout({
 
   // Cierra el drawer mobile al navegar a otra ruta del panel
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
     setMobileOpen(false);
   }, [pathname]);
 

@@ -46,7 +46,7 @@ export default function QRCodePage() {
         background_color: backgroundColor,
         size_px: sizePx,
       });
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al generar el código QR"));
     }
   };
@@ -151,7 +151,7 @@ export default function QRCodePage() {
             </label>
             {!restaurant.logo_url && (
               <p className="-mt-2 text-xs text-gray-500">
-                Sube un logo en la pestaña "Info General" para poder incluirlo en el QR
+                Sube un logo en la pestaña &quot;Info General&quot; para poder incluirlo en el QR
               </p>
             )}
 

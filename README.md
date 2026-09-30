@@ -38,7 +38,7 @@ La forma recomendada de levantar el stack completo. Requiere Docker y Docker Com
    ```
 5. Panel de administración: `http://localhost:3000/admin/login`. Para crear el primer usuario, correr el script de semilla dentro del contenedor del backend:
    ```bash
-   docker compose exec backend python seed.py
+   docker compose exec -e SEED_ADMIN_PASSWORD='<tu-contraseña>' backend python seed.py
    ```
 
 **Notas:**
@@ -85,7 +85,7 @@ Alternativa sin Docker Compose: frontend en Vercel, backend en Fly.io, base de d
 ### Requisitos
 
 - Python 3.10+
-- Node.js 18+
+- Node.js 22+
 - Docker y Docker Compose (opcional: solo si se quiere una base Postgres real en vez del fallback a SQLite)
 
 ### Backend
@@ -96,7 +96,7 @@ source venv/Scripts/activate   # Windows (Git Bash); en macOS/Linux: source venv
 pip install -r requirements.txt
 cp .env.example .env           # por defecto usa sqlite:///./menuqr.db, no requiere Postgres
 alembic upgrade head
-python seed.py                 # crea el usuario administrador inicial
+SEED_ADMIN_PASSWORD='<tu-contraseña>' python seed.py   # crea el usuario administrador inicial (la contraseña es obligatoria)
 uvicorn app.main:app --reload
 ```
 
@@ -122,13 +122,13 @@ python -m pytest tests/ -v
 
 Es una suite **manual**, no forma parte de `pnpm build` ni de ningún CI — correrla antes de cada release, o después de tocar el flujo de auth/sesión.
 
-Requiere backend y frontend levantados (con el usuario admin ya sembrado) y Google Chrome instalado en la máquina (usa el Chrome real del sistema vía `channel: "chrome"`, no descarga un Chromium aparte):
+Requiere backend y frontend levantados (con el usuario admin ya sembrado con `SEED_ADMIN_PASSWORD`; el test lee `E2E_ADMIN_PASSWORD` y, opcionalmente, `E2E_ADMIN_USERNAME`, por defecto `admin`) y Google Chrome instalado en la máquina (usa el Chrome real del sistema vía `channel: "chrome"`, no descarga un Chromium aparte):
 
 ```bash
 # Terminal 1
 cd backend && source venv/Scripts/activate && uvicorn app.main:app --reload
 # Terminal 2
 cd frontend && pnpm dev
-# Terminal 3
-cd frontend && pnpm test:e2e
+# Terminal 3 (credenciales del admin sembrado)
+cd frontend && E2E_ADMIN_PASSWORD='<tu-contraseña>' pnpm test:e2e
 ```

@@ -80,6 +80,7 @@ export default function EditRestaurantPage() {
 
   useEffect(() => {
     if (restaurant) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
       setForm({
         name: restaurant.name || "",
         description: restaurant.description || "",

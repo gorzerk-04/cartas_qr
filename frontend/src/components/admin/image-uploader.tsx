@@ -56,7 +56,7 @@ export default function ImageUploader({
 
     try {
       await onUpload(file);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al subir la imagen. Intenta de nuevo."));
     }
   };

@@ -62,7 +62,7 @@ export interface RestaurantCreate {
   is_published?: boolean;
 }
 
-export interface RestaurantUpdate extends Partial<RestaurantCreate> {}
+export type RestaurantUpdate = Partial<RestaurantCreate>;
 
 export interface OperatingHour {
   id: string;
@@ -97,7 +97,7 @@ export interface CategoryCreate {
   is_active?: boolean;
 }
 
-export interface CategoryUpdate extends Partial<CategoryCreate> {}
+export type CategoryUpdate = Partial<CategoryCreate>;
 
 export type ProductStatus = "available" | "unavailable" | "hidden";
 
@@ -131,7 +131,7 @@ export interface ProductCreate {
   is_featured?: boolean;
 }
 
-export interface ProductUpdate extends Partial<ProductCreate> {}
+export type ProductUpdate = Partial<ProductCreate>;
 
 export type SocialPlatform =
   | "instagram"

@@ -91,7 +91,7 @@ export default function RestaurantSocialsEditor({ restaurantId, slug }: Restaura
       await createMutation.mutateAsync({ platform: newPlatform, url: newUrl.trim() });
       setNewPlatform("");
       setNewUrl("");
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al agregar la red social"));
     }
   };
@@ -106,7 +106,7 @@ export default function RestaurantSocialsEditor({ restaurantId, slug }: Restaura
     try {
       await updateMutation.mutateAsync({ id, data: { url: editUrl.trim() } });
       setEditingId(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al actualizar la red social"));
     }
   };

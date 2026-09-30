@@ -47,6 +47,7 @@ export default function OperatingHoursEditor({
   useEffect(() => {
     if (!hours) return;
     if (hours.length === 0) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
       setRows(buildDefaultHours());
       return;
     }

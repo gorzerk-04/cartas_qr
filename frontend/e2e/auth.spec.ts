@@ -2,8 +2,11 @@ import { test, expect } from "@playwright/test";
 
 // Requiere backend (localhost:8000) y frontend (localhost:3000) levantados, y el
 // usuario admin ya sembrado (`python seed.py`). Ver README para cómo correr esta suite.
-const ADMIN_USERNAME = "admin";
-const ADMIN_PASSWORD = "SuperSecure123!";
+const ADMIN_USERNAME = process.env.E2E_ADMIN_USERNAME ?? "admin";
+const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "";
+if (!ADMIN_PASSWORD) {
+  throw new Error("Define E2E_ADMIN_PASSWORD (la contraseña con que se sembró el admin).");
+}
 
 test.describe("Autenticación", () => {
   test("login exitoso lleva al dashboard", async ({ page }) => {
