@@ -74,3 +74,82 @@ def client(db) -> Generator:
     with TestClient(app) as c:
         yield c
     app.dependency_overrides.clear()
+
+
+# ---------------------------------------------------------------------------
+# Fixtures de roles (Fase 1). Solo se agregan; las existentes no se modifican.
+# ---------------------------------------------------------------------------
+from app.core.security import get_password_hash  # noqa: E402
+from app.models.restaurant import Restaurant  # noqa: E402
+from app.models.restaurant_member import RestaurantMember  # noqa: E402
+from app.models.user import User, UserRole  # noqa: E402
+
+TEST_PASSWORD = "testpassword-123"
+
+
+def login_headers(client, username: str, password: str = TEST_PASSWORD) -> dict:
+    response = client.post("/api/v1/auth/login", json={"username": username, "password": password})
+    assert response.status_code == 200, response.text
+    return {"Authorization": f"Bearer {response.json()['data']['access_token']}"}
+
+
+@pytest.fixture
+def make_user(db):
+    def _make(username, role=UserRole.RESTAURANT_OWNER, *, is_active=True, must_change_password=False, password=TEST_PASSWORD):
+        user = User(
+            email=f"{username}@example.com",
+            username=username,
+            hashed_password=get_password_hash(password),
+            is_active=is_active,
+            role=role,
+            must_change_password=must_change_password,
+        )
+        db.add(user)
+        db.commit()
+        db.refresh(user)
+        return user
+
+    return _make
+
+
+@pytest.fixture
+def make_membership(db):
+    def _make(user, restaurant_id):
+        member = RestaurantMember(user_id=user.id, restaurant_id=restaurant_id)
+        db.add(member)
+        db.commit()
+        return member
+
+    return _make
+
+
+@pytest.fixture
+def make_restaurant(db):
+    def _make(slug):
+        restaurant = Restaurant(name=f"Resto {slug}", slug=slug)
+        db.add(restaurant)
+        db.commit()
+        db.refresh(restaurant)
+        return restaurant
+
+    return _make
+
+
+@pytest.fixture
+def admin_user(make_user):
+    return make_user("adminuser", UserRole.PLATFORM_ADMIN)
+
+
+@pytest.fixture
+def owner_user(make_user):
+    return make_user("owneruser", UserRole.RESTAURANT_OWNER)
+
+
+@pytest.fixture
+def admin_headers(client, admin_user):
+    return login_headers(client, admin_user.username)
+
+
+@pytest.fixture
+def owner_headers(client, owner_user):
+    return login_headers(client, owner_user.username)

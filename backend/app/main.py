@@ -14,6 +14,7 @@ from app.api.v1.products import router as products_router
 from app.api.v1.restaurant_socials import router as restaurant_socials_router
 from app.api.v1.public import router as public_router
 from app.api.v1.stats import router as stats_router
+from app.api.v1.users import router as users_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -49,6 +50,7 @@ app.include_router(products_router, prefix="/api/v1/admin/restaurants", tags=["�
 app.include_router(restaurant_socials_router, prefix="/api/v1/admin/restaurants", tags=["🔗 Socials"])
 app.include_router(public_router, prefix="/api/v1/public", tags=["🌎 Public"])
 app.include_router(stats_router, prefix="/api/v1/admin", tags=["📊 Stats"])
+app.include_router(users_router, prefix="/api/v1/admin/users", tags=["👥 Users"])
 
 
 @app.get("/health", tags=["❤️ Health"])

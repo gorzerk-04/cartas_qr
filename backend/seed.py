@@ -7,7 +7,7 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
 from app.core.database import SessionLocal
 from app.core.security import get_password_hash
-from app.models.user import User
+from app.models.user import User, UserRole
 
 
 def seed_db():
@@ -30,7 +30,8 @@ def seed_db():
                 username=admin_username,
                 hashed_password=get_password_hash(admin_password),
                 is_active=True,
-                is_superadmin=True
+                is_superadmin=True,
+                role=UserRole.PLATFORM_ADMIN,
             )
             db.add(admin_user)
             db.commit()

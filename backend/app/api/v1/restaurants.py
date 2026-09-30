@@ -107,15 +107,11 @@ def update_restaurant(
     """
     Actualizar datos de un restaurante. El slug es inmutable y será ignorado.
 
-    Un dueño no puede cambiar `slug` ni `is_active` (403); sí puede publicar/despublicar.
+    El slug es inmutable para todos los roles (RestaurantUpdate no lo acepta).
+    Un dueño no puede cambiar `is_active` (403); sí puede publicar/despublicar.
     """
     if not current_user.is_platform_admin:
         sent = obj_in.model_dump(exclude_unset=True)
-        if "slug" in sent and sent["slug"] != restaurant.slug:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="No puedes cambiar el slug: rompería los códigos QR ya impresos",
-            )
         if "is_active" in sent and sent["is_active"] != restaurant.is_active:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
