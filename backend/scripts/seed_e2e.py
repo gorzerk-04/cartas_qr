@@ -3,7 +3,8 @@
 Crea (o actualiza):
   - el admin de plataforma            (E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD)
   - un dueño sin cambio pendiente     (E2E_OWNER_USERNAME / E2E_OWNER_EMAIL / E2E_OWNER_PASSWORD)
-  - el restaurante "E2E Propio", asignado al dueño
+  - el restaurante "E2E Propio", asignado al dueño y con el programa de fidelización
+    activo (2 visitas para canjear, sin tiempo mínimo entre visitas)
   - el restaurante "E2E Ajeno", sin asignar
 
 Se niega a correr con ENVIRONMENT=production. Uso (desde backend/):
@@ -18,9 +19,11 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from app.core.config import settings  # noqa: E402
 from app.core.database import SessionLocal  # noqa: E402
 from app.core.security import get_password_hash  # noqa: E402
+from app.models.loyalty import LoyaltyProgram  # noqa: E402
 from app.models.restaurant import Restaurant  # noqa: E402
 from app.models.restaurant_member import RestaurantMember  # noqa: E402
 from app.models.user import User, UserRole  # noqa: E402
+from app.services.loyalty import default_consent_text  # noqa: E402
 
 OWN_SLUG = "e2e-propio"
 OTHER_SLUG = "e2e-ajeno"
@@ -55,10 +58,31 @@ def _upsert_restaurant(db, *, name, slug):
         restaurant = Restaurant(name=name, slug=slug, is_active=True, is_published=True)
         db.add(restaurant)
     restaurant.name = name
+    restaurant.is_active = True
+    restaurant.is_published = True
     restaurant.deleted_at = None
     db.commit()
     db.refresh(restaurant)
     return restaurant
+
+
+def _upsert_loyalty_program(db, restaurant):
+    """Programa activo: 2 visitas para canjear y sin espera entre visitas (para los e2e)."""
+    program = db.query(LoyaltyProgram).filter(LoyaltyProgram.restaurant_id == restaurant.id).first()
+    if program is None:
+        program = LoyaltyProgram(
+            restaurant_id=restaurant.id,
+            reward_description="Postre e2e gratis",
+            consent_text=default_consent_text(restaurant.name),
+            consent_version=1,
+        )
+        db.add(program)
+    program.is_active = True
+    program.visits_required = 2
+    program.min_hours_between_visits = 0
+    program.visits_expire_after_days = None
+    program.reward_description = "Postre e2e gratis"
+    db.commit()
 
 
 def seed_e2e():
@@ -90,6 +114,7 @@ def seed_e2e():
         )
         own = _upsert_restaurant(db, name="E2E Propio", slug=OWN_SLUG)
         other = _upsert_restaurant(db, name="E2E Ajeno", slug=OTHER_SLUG)
+        _upsert_loyalty_program(db, own)
 
         # El dueño es miembro solo del restaurante propio
         db.query(RestaurantMember).filter(
@@ -104,7 +129,8 @@ def seed_e2e():
             db.add(RestaurantMember(user_id=owner.id, restaurant_id=own.id))
         db.commit()
         print(f"Datos e2e listos: admin '{admin_username}', dueño '{owner_username}', "
-              f"restaurantes '{OWN_SLUG}' (asignado) y '{OTHER_SLUG}' (sin asignar).")
+              f"restaurantes '{OWN_SLUG}' (asignado, con programa activo de 2 visitas) y "
+              f"'{OTHER_SLUG}' (sin asignar).")
     except Exception as e:
         print(f"Error al sembrar los datos e2e: {e}")
         db.rollback()

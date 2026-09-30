@@ -1,38 +1,15 @@
-import { test, expect, request as pwRequest, type Browser, type BrowserContext } from "@playwright/test";
+import { test, expect, type BrowserContext } from "@playwright/test";
+import { apiLogin, contextFor, findRestaurantId, requireEnv } from "./helpers";
 
 // Requiere backend (localhost:8000) y frontend (localhost:3000) levantados y los datos
 // sembrados con `python scripts/seed_e2e.py` (ver README). Variables de entorno:
 //   E2E_ADMIN_PASSWORD, E2E_OWNER_PASSWORD (obligatorias)
 //   E2E_ADMIN_USERNAME (def. "admin"), E2E_OWNER_USERNAME (def. "e2e_owner")
-const API_URL = process.env.E2E_API_URL ?? "http://localhost:8000/api/v1";
+requireEnv("E2E_ADMIN_PASSWORD", "E2E_OWNER_PASSWORD");
 const ADMIN_USERNAME = process.env.E2E_ADMIN_USERNAME ?? "admin";
 const ADMIN_PASSWORD = process.env.E2E_ADMIN_PASSWORD ?? "";
 const OWNER_USERNAME = process.env.E2E_OWNER_USERNAME ?? "e2e_owner";
 const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD ?? "";
-if (!ADMIN_PASSWORD || !OWNER_PASSWORD) {
-  throw new Error("Define E2E_ADMIN_PASSWORD y E2E_OWNER_PASSWORD (ver README).");
-}
-
-// El login tiene rate limit (5/min por IP) y auth.spec.ts ya gasta varios intentos: se
-// inicia sesión UNA vez por rol por la API y se reutiliza la cookie de refresh en el
-// navegador (el layout refresca el access token en silencio), esperando si hay 429.
-async function apiLogin(username: string, password: string) {
-  const api = await pwRequest.newContext({ baseURL: `${API_URL.replace(/\/$/, "")}/` });
-  for (let attempt = 0; attempt < 2; attempt++) {
-    const res = await api.post("auth/login", { data: { username, password } });
-    if (res.ok()) {
-      const body = await res.json();
-      return { api, accessToken: body.data.access_token as string, storageState: await api.storageState() };
-    }
-    if (res.status() !== 429) throw new Error(`Login API falló (${res.status()}): ${await res.text()}`);
-    await new Promise((r) => setTimeout(r, 62_000));
-  }
-  throw new Error("Login API: rate limit persistente");
-}
-
-async function contextFor(browser: Browser, storageState: Awaited<ReturnType<typeof apiLogin>>["storageState"]) {
-  return browser.newContext({ storageState });
-}
 
 test.describe("Roles", () => {
   test.describe.configure({ mode: "serial", timeout: 120_000 });
@@ -47,16 +24,11 @@ test.describe("Roles", () => {
     test.setTimeout(180_000);
     const admin = await apiLogin(ADMIN_USERNAME, ADMIN_PASSWORD);
     const owner = await apiLogin(OWNER_USERNAME, OWNER_PASSWORD);
-    adminCtx = await contextFor(browser, admin.storageState);
-    ownerCtx = await contextFor(browser, owner.storageState);
+    adminCtx = await contextFor(browser, admin);
+    ownerCtx = await contextFor(browser, owner);
 
-    const res = await admin.api.get("admin/restaurants", {
-      params: { limit: 100 },
-      headers: { Authorization: `Bearer ${admin.accessToken}` },
-    });
-    const restaurants: { id: string; name: string }[] = (await res.json()).data;
-    ownRestaurantId = restaurants.find((r) => r.name === "E2E Propio")?.id ?? "";
-    otherRestaurantId = restaurants.find((r) => r.name === "E2E Ajeno")?.id ?? "";
+    ownRestaurantId = await findRestaurantId(admin, "E2E Propio");
+    otherRestaurantId = await findRestaurantId(admin, "E2E Ajeno");
     if (!ownRestaurantId || !otherRestaurantId) {
       throw new Error("Faltan los restaurantes e2e: corre `python scripts/seed_e2e.py`.");
     }
@@ -143,7 +115,7 @@ test.describe("Roles", () => {
 
     // El nuevo usuario entra con la clave temporal y queda forzado a cambiarla
     const fresh = await apiLogin(username, tempPassword);
-    const ctx = await browser.newContext({ storageState: fresh.storageState });
+    const ctx = await contextFor(browser, fresh);
     const userPage = await ctx.newPage();
     await userPage.goto("/admin/dashboard");
     await userPage.waitForURL("**/admin/change-password", { timeout: 15_000 });

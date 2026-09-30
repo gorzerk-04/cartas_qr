@@ -147,6 +147,12 @@ E2E_ADMIN_PASSWORD='<clave-admin>' E2E_OWNER_PASSWORD='<clave-dueño>' python sc
 E2E_ADMIN_PASSWORD='<clave-admin>' E2E_OWNER_PASSWORD='<clave-dueño>' pnpm test:e2e
 ```
 
+#### Suite E2E de fidelización (`loyalty.spec.ts`)
+
+Usa los mismos datos de `seed_e2e.py`, que además deja "E2E Propio" con el **programa de fidelización activo** (2 visitas para canjear, sin tiempo mínimo entre visitas). Comprueba, en el navegador y como dueño: el check-in de un celular nuevo (pide nombre y consentimiento) que muestra 1/2; un segundo check-in que llega a 2/2 y ofrece "Canjear"; el canje (con confirmación) que deja el saldo en 0; y que la carta pública `/menu/e2e-propio` muestra el banner sin exponer datos de comensales. Cada corrida usa un celular nuevo, así que se puede repetir sin limpiar la base.
+
+Corre junto con las demás: `pnpm test:e2e` ejecuta `auth`, `loyalty` y `roles` (necesita `E2E_OWNER_PASSWORD`; `roles` también `E2E_ADMIN_PASSWORD`).
+
 Variables opcionales: `E2E_ADMIN_USERNAME` (def. `admin`), `E2E_OWNER_USERNAME` (def. `e2e_owner`), `E2E_OWNER_EMAIL`, `E2E_API_URL` (def. `http://localhost:8000/api/v1`).
 
-> El login tiene rate limit (5 intentos por minuto por IP). `roles.spec.ts` inicia sesión por la API una vez por rol y, si encuentra un 429, espera 62 s y reintenta, así que una corrida completa puede tardar más de un minuto. Si repites la suite completa en menos de un minuto, los tests de login de `auth.spec.ts` pueden fallar por el mismo límite: espera y vuelve a correr.
+> El login tiene rate limit (5 intentos por minuto por IP). Por eso Playwright corre con un solo worker, y `roles.spec.ts` y `loyalty.spec.ts` inician sesión por la API una vez por rol y, si encuentran un 429, esperan 62 s y reintentan: una corrida completa puede tardar más de un minuto. Si repites la suite completa en menos de un minuto, los tests de login de `auth.spec.ts` pueden fallar por el mismo límite: espera y vuelve a correr.
