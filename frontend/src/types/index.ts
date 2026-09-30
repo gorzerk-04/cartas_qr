@@ -223,6 +223,9 @@ export interface AdminStats {
   total_restaurants: number;
   published_restaurants: number;
   qr_generated_count: number;
+  customers_total: number;
+  loyalty_visits_month: number;
+  loyalty_redemptions_month: number;
 }
 
 export interface PublicSchedule {
@@ -280,4 +283,100 @@ export interface PublicRestaurant {
   schedules: PublicSchedule[];
   socials: PublicSocial[];
   categories: PublicCategory[];
+  // Solo viene si el programa de fidelización está activo. Nunca incluye datos de comensales.
+  loyalty?: PublicLoyalty | null;
+}
+
+export interface PublicLoyalty {
+  visits_required: number;
+  reward_description: string;
+}
+
+// ---------------------------------------------------------------- fidelización
+export interface LoyaltyProgram {
+  id: string;
+  restaurant_id: string;
+  is_active: boolean;
+  visits_required: number;
+  reward_description: string;
+  reward_product_id?: string | null;
+  min_hours_between_visits: number;
+  visits_expire_after_days?: number | null;
+  consent_text: string;
+  consent_version: number;
+  updated_at: string;
+}
+
+export interface LoyaltyProgramInput {
+  is_active: boolean;
+  visits_required: number;
+  reward_description: string;
+  reward_product_id?: string | null;
+  min_hours_between_visits: number;
+  visits_expire_after_days?: number | null;
+  consent_text?: string | null;
+}
+
+export interface Customer {
+  id: string;
+  restaurant_id: string;
+  full_name: string;
+  phone?: string | null;
+  email?: string | null;
+  notes?: string | null;
+  consent_given_at: string;
+  consent_version: number;
+  created_at: string;
+  visits_balance: number;
+  last_visit_at?: string | null;
+  visits_required?: number | null;
+  reward_available: boolean;
+}
+
+export interface CustomerUpdateInput {
+  full_name?: string;
+  phone?: string;
+  email?: string | null;
+  notes?: string | null;
+}
+
+export type VisitStatus = "valid" | "redeemed" | "voided" | "expired";
+
+export interface LoyaltyVisit {
+  id: string;
+  customer_id: string;
+  visited_at: string;
+  registered_by_user_id?: string | null;
+  registered_by_username?: string | null;
+  redemption_id?: string | null;
+  voided_at?: string | null;
+  void_reason?: string | null;
+  status: VisitStatus;
+}
+
+export interface LoyaltyRedemption {
+  id: string;
+  customer_id: string;
+  redeemed_at: string;
+  redeemed_by_user_id?: string | null;
+  visits_consumed: number;
+  reward_description_snapshot: string;
+  reward_product_id_snapshot?: string | null;
+  voided_at?: string | null;
+  void_reason?: string | null;
+}
+
+export interface CheckInInput {
+  phone: string;
+  full_name?: string;
+  consent?: boolean;
+}
+
+export interface CheckInResult {
+  customer: Customer;
+  visit: LoyaltyVisit;
+  balance: number;
+  visits_required: number;
+  reward_available: boolean;
+  customer_created: boolean;
 }

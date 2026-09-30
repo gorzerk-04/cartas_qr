@@ -34,3 +34,12 @@ export function getErrorCode(error: unknown): string | null {
   }
   return null;
 }
+
+// Objeto `detail` completo cuando el backend lo envía como { code, message, ...extra }.
+export function getErrorDetail(error: unknown): Record<string, unknown> | null {
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail;
+  if (detail && typeof detail === "object" && !Array.isArray(detail)) {
+    return detail as Record<string, unknown>;
+  }
+  return null;
+}
