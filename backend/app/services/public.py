@@ -8,6 +8,7 @@ from app.repositories.operating_hour import operating_hour_repository
 from app.repositories.restaurant_social import restaurant_social_repository
 from app.repositories.category import category_repository
 from app.repositories.product import product_repository
+from app.repositories.loyalty import loyalty_program_repository
 from app.schemas.public import PublicRestaurantResponse
 
 
@@ -27,6 +28,13 @@ class PublicService:
             if c.is_active
         ]
         products = product_repository.get_public_by_restaurant(db, restaurant_id=restaurant.id)
+
+        program = loyalty_program_repository.get_by_restaurant(db, restaurant.id)
+        loyalty = (
+            {"visits_required": program.visits_required, "reward_description": program.reward_description}
+            if program is not None and program.is_active
+            else None
+        )
 
         products_by_category = {}
         for product in products:
@@ -50,6 +58,7 @@ class PublicService:
             city=restaurant.city,
             country=restaurant.country,
             is_open_now=self.compute_is_open_now(hours),
+            loyalty=loyalty,
             schedules=hours,
             socials=socials,
             categories=[
