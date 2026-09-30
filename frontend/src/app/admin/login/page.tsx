@@ -17,6 +17,7 @@ function LoginForm() {
 
   useEffect(() => {
     if (searchParams.get("expired") === "true") {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
       setSessionExpired(true);
     }
   }, [searchParams]);

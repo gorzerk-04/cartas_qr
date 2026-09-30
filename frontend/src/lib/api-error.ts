@@ -5,7 +5,7 @@
 // crashea con "Objects are not valid as a React child" — este helper normaliza
 // ambos casos a un string legible.
 export function getErrorMessage(error: unknown, fallback: string): string {
-  const detail = (error as any)?.response?.data?.detail;
+  const detail = (error as { response?: { data?: { detail?: unknown } } } | null)?.response?.data?.detail;
 
   if (typeof detail === "string") return detail;
 

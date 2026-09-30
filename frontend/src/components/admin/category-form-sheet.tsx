@@ -44,6 +44,7 @@ export default function CategoryFormSheet({
 
   useEffect(() => {
     if (isOpen) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
       setForm(
         category
           ? { name: category.name, description: category.description || "", is_active: category.is_active }
@@ -69,7 +70,7 @@ export default function CategoryFormSheet({
         const created = await createMutation.mutateAsync(form);
         setCreatedCategory(created);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al guardar la categoría"));
     }
   };

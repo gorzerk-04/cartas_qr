@@ -142,6 +142,7 @@ export default function ProductFormSheet({
   useEffect(() => {
     if (isOpen) {
       const initial = product ? formFromProduct(product) : emptyForm(defaultCategoryId);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- sincroniza el formulario con las props/datos cargados
       setForm(initial);
       setInitialForm(initial);
       setCreatedProduct(null);
@@ -185,7 +186,7 @@ export default function ProductFormSheet({
         setCreatedProduct(created);
         setInitialForm(form);
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       setError(getErrorMessage(err, "Error al guardar el producto"));
     }
   };
