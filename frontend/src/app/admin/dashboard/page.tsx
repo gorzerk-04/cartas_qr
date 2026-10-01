@@ -8,14 +8,21 @@ import {
   TrendingUp,
   Eye,
   QrCode,
+  Users,
+  Footprints,
+  Gift,
   Plus,
   ArrowRight,
 } from "lucide-react";
 import Link from "next/link";
 
 export default function DashboardPage() {
-  const { user, can } = useAuth();
+  const { user, can, restaurants } = useAuth();
   const { data: stats, isLoading: statsLoading } = useAdminStats();
+
+  // Un dueño con un solo restaurante va directo a sus comensales; el resto, a la lista
+  const customersHref =
+    restaurants.length === 1 ? `/admin/restaurants/${restaurants[0].id}/customers` : "/admin/restaurants";
 
   const statCards = [
     {
@@ -33,12 +40,12 @@ export default function DashboardPage() {
       href: "/admin/restaurants?is_published=true",
     },
     {
-      label: "Visitas (mes)",
+      label: "Vistas de la carta (próximamente)",
       value: "—",
       icon: TrendingUp,
       color: "#F59E0B",
       href: "#",
-      title: "El análisis de visitas todavía no está disponible (planeado post-MVP)",
+      title: "El análisis de vistas de la carta todavía no está disponible (planeado post-MVP)",
     },
     {
       label: "QR Generados",
@@ -46,6 +53,29 @@ export default function DashboardPage() {
       icon: QrCode,
       color: "#EC4899",
       href: "/admin/qr",
+    },
+    {
+      label: "Comensales",
+      value: statsLoading ? "…" : String(stats?.customers_total ?? 0),
+      icon: Users,
+      color: "#06B6D4",
+      href: customersHref,
+    },
+    {
+      label: "Visitas al local (mes)",
+      value: statsLoading ? "…" : String(stats?.loyalty_visits_month ?? 0),
+      icon: Footprints,
+      color: "#8B5CF6",
+      href: customersHref,
+      title: "Visitas registradas en caja este mes (sin las anuladas)",
+    },
+    {
+      label: "Canjes (mes)",
+      value: statsLoading ? "…" : String(stats?.loyalty_redemptions_month ?? 0),
+      icon: Gift,
+      color: "#10B981",
+      href: customersHref,
+      title: "Recompensas canjeadas este mes (sin las anuladas)",
     },
   ];
 

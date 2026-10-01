@@ -7,6 +7,9 @@ import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./e2e",
   fullyParallel: false,
+  // Un solo worker: el login tiene rate limit (5/min por IP) y varias specs inician sesión;
+  // en paralelo se pisarían entre sí y fallarían con 429.
+  workers: 1,
   retries: 0,
   reporter: "list",
   timeout: 30_000,

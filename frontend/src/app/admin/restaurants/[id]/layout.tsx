@@ -22,7 +22,11 @@ export default function RestaurantDetailLayout({
     { label: "Categorías", href: `/admin/restaurants/${id}/categories` },
     { label: "Productos", href: `/admin/restaurants/${id}/products` },
     { label: "Código QR", href: `/admin/restaurants/${id}/qr` },
+    { label: "Check-in", href: `/admin/restaurants/${id}/check-in` },
+    { label: "Comensales", href: `/admin/restaurants/${id}/customers` },
+    { label: "Fidelización", href: `/admin/restaurants/${id}/loyalty` },
   ];
+  const rootHref = `/admin/restaurants/${id}`;
 
   return (
     <div className="space-y-6">
@@ -59,9 +63,10 @@ export default function RestaurantDetailLayout({
       </div>
 
       <div className="border-b border-[#2D3147]">
-        <nav className="flex gap-6">
+        <nav className="flex gap-6 overflow-x-auto whitespace-nowrap">
           {tabs.map((tab) => {
-            const isActive = pathname === tab.href;
+            // Las pestañas con subrutas (p. ej. la ficha de un comensal) siguen activas
+            const isActive = tab.href === rootHref ? pathname === tab.href : pathname.startsWith(tab.href);
             return (
               <Link
                 key={tab.href}
