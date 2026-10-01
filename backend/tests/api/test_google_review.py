@@ -14,6 +14,7 @@ from app.services.google_reviews import (
     ReviewLinkError,
     build_review_link,
     expand_url,
+    ftid_to_place_id,
     parse_maps_url,
     resolve_review_link,
 )
@@ -26,7 +27,7 @@ LONG = (
     "?entry=tts"
 )
 FTID = "0x91a7c3749150a1f7:0xb61bbbe27d37f437"
-REVIEW = "https://www.google.com/maps?cid=13122288520711894071"
+REVIEW = "https://search.google.com/local/writereview?placeid=ChIJ96FQkXTDp5ERN_Q3feK7G7Y"
 OVERRIDE = "https://g.page/r/CbAbCdEf123/review"
 
 
@@ -78,7 +79,13 @@ def test_url_larga_directa_no_llama_a_google():
 def test_url_con_parametro_ftid():
     url = "https://maps.google.com/?ftid=0xABC123:0xDEF456&q=Algo"
     assert parse_maps_url(url) == ("0xabc123:0xdef456", None)
-    assert build_review_link("0xabc123:0xdef456") == f"https://www.google.com/maps?cid={0xdef456}"
+    assert build_review_link("0xabc123:0xdef456").startswith("https://search.google.com/local/writereview?placeid=ChIJ")
+
+
+def test_ftid_a_place_id_coincide_con_el_ejemplo_oficial_de_google():
+    # Ejemplo de la documentación de Google (Google Sydney) y su ftid
+    assert ftid_to_place_id("0x6b12ae37b47f5b37:0x8eaddfcd1b32ca52") == "ChIJN1t_tDeuEmsRUsoyG83frY4"
+    assert ftid_to_place_id(FTID) == "ChIJ96FQkXTDp5ERN_Q3feK7G7Y"
 
 
 def test_redireccion_via_consent_google_com():

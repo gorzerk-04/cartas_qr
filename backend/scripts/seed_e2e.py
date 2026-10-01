@@ -33,7 +33,7 @@ E2E_MAPS_URL = (
     "https://www.google.com/maps/place/Chifa+Taiwan/@-9.9554469,-76.2486745,21z/data=!4m6!3m5"
     "!1s0x91a7c3749150a1f7:0xb61bbbe27d37f437!8m2!3d-9.9554923!4d-76.2486634?entry=tts"
 )
-E2E_REVIEW_URL = "https://www.google.com/maps?cid=13122288520711894071"
+E2E_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ96FQkXTDp5ERN_Q3feK7G7Y"
 
 
 def _require(name: str) -> str:

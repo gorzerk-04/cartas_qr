@@ -5,7 +5,7 @@ import { test, expect } from "@playwright/test";
 // (generado desde su enlace de Maps); "E2E Ajeno" no tiene ninguno de los dos.
 const OWN_SLUG = "e2e-propio";
 const OTHER_SLUG = "e2e-ajeno";
-const REVIEW_URL = "https://www.google.com/maps?cid=13122288520711894071";
+const REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ96FQkXTDp5ERN_Q3feK7G7Y";
 
 test.describe("Botones de la carta", () => {
   test("con enlace, el botón de reseña abre Google en una pestaña nueva", async ({ page }) => {

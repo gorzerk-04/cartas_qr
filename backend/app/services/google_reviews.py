@@ -8,12 +8,21 @@ Flujo:
    validando cada salto contra los hosts de Google (protección SSRF, máximo 5 saltos).
    Si termina en consent.google.com, usa su parámetro `continue`.
 2. parse_maps_url: extrae el ftid (`?ftid=` o `0x...:0x...` dentro de `data=`) y el nombre.
-3. build_review_link: https://www.google.com/maps?cid={cid}, donde cid es la segunda parte
-   del ftid en decimal. Lleva siempre a la ficha exacta del local en Google Maps (desde ahí el
-   comensal toca "Escribir una reseña"). Se descartó el formato search?q={nombre}#lrd={ftid},3
-   porque, si hay locales con el mismo nombre, Google muestra una lista y no abre la reseña.
+3. build_review_link: https://search.google.com/local/writereview?placeid={place_id}, que abre
+   directamente la ventana para escribir la reseña del local exacto.
+
+   El Place ID ("ChIJ...") se calcula a partir del ftid sin llamar a Google: es el base64url de
+   un mensaje protobuf con las dos mitades del ftid como fixed64 (0a 12 | 09 <hi> | 11 <lo>).
+   Verificado con el ejemplo de la documentación de Google: ChIJN1t_tDeuEmsRUsoyG83frY4 ↔
+   0x6b12ae37b47f5b37:0x8eaddfcd1b32ca52. El formato no está documentado oficialmente; si
+   Google lo cambiara, el admin puede pegar el enlace oficial del Perfil de Empresa (override).
+
+   Formatos descartados: search?q={nombre}#lrd={ftid},3 (con locales homónimos Google muestra
+   una lista y no abre la reseña) y maps?cid= (lleva a la ficha, pero no abre la reseña).
 """
+import base64
 import re
+import struct
 from typing import Optional, Tuple
 from urllib.parse import parse_qs, unquote_plus, urljoin, urlsplit
 
@@ -185,10 +194,19 @@ def parse_maps_url(url: str) -> Tuple[str, Optional[str]]:
     return ftid.lower(), (name or None)
 
 
+def ftid_to_place_id(ftid: str) -> str:
+    """Convierte "0x<hi>:0x<lo>" en el Place ID "ChIJ..." equivalente (sin red)."""
+    try:
+        hi, lo = (int(part, 16) for part in ftid.split(":"))
+        raw = b"\x0a\x12\x09" + struct.pack("<Q", hi) + b"\x11" + struct.pack("<Q", lo)
+    except (ValueError, struct.error):
+        raise ReviewLinkError("El ID del lugar no es válido", code="PLACE_ID_NOT_FOUND")
+    return base64.urlsafe_b64encode(raw).decode("ascii").rstrip("=")
+
+
 def build_review_link(ftid: str, nombre: Optional[str] = None) -> str:
-    """Enlace a la ficha exacta del local en Google Maps. `nombre` no se usa: el cid basta."""
-    cid = int(ftid.split(":")[1], 16)
-    return f"https://www.google.com/maps?cid={cid}"
+    """Enlace que abre directo la ventana de reseña del local. `nombre` no se usa."""
+    return f"https://search.google.com/local/writereview?placeid={ftid_to_place_id(ftid)}"
 
 
 def resolve_review_link(maps_url: str, *, transport: Optional[httpx.BaseTransport] = None) -> dict:
