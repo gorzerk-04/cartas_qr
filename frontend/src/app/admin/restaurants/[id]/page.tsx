@@ -23,8 +23,8 @@ import Link from "next/link";
 import ImageUploader from "../../../../components/admin/image-uploader";
 import OperatingHoursEditor from "../../../../components/admin/operating-hours-editor";
 import RestaurantSocialsEditor from "../../../../components/admin/restaurant-socials-editor";
-import { getErrorMessage, getFieldErrorMessage } from "../../../../lib/api-error";
-import { googleReviewTestUrl } from "../../../../lib/google-review";
+import { getErrorMessage } from "../../../../lib/api-error";
+import GoogleReviewSummary from "../../../../components/admin/google-review-summary";
 import { blankToNull } from "../../../../lib/forms";
 import { useAuth } from "../../../../hooks/use-auth";
 
@@ -37,7 +37,6 @@ const NULLABLE_FIELDS = [
   "whatsapp",
   "email",
   "website",
-  "google_review_url",
   "address",
   "city",
 ] as const satisfies readonly (keyof RestaurantUpdate)[];
@@ -53,7 +52,7 @@ const COLOR_FIELDS = [
 export default function EditRestaurantPage() {
   const params = useParams();
   const id = params.id as string;
-  const { can } = useAuth();
+  const { can, isPlatformAdmin } = useAuth();
   const canToggleActive = can("toggleActive");
   const canEdit = can("editRestaurantInfo");
 
@@ -97,7 +96,6 @@ export default function EditRestaurantPage() {
         whatsapp: restaurant.whatsapp || "",
         email: restaurant.email || "",
         website: restaurant.website || "",
-        google_review_url: restaurant.google_review_url || "",
         address: restaurant.address || "",
         city: restaurant.city || "",
         country: restaurant.country || "Perú",
@@ -147,8 +145,6 @@ export default function EditRestaurantPage() {
   const apiError = updateMutation.error
     ? getErrorMessage(updateMutation.error, "Error al actualizar el restaurante")
     : null;
-  const reviewUrlError = getFieldErrorMessage(updateMutation.error, "google_review_url");
-  const reviewTestUrl = googleReviewTestUrl(form.google_review_url);
 
   if (isLoadingRestaurant) {
     return (
@@ -431,42 +427,7 @@ export default function EditRestaurantPage() {
                 className="mt-1 block w-full rounded-lg border border-[#2D3147] bg-[#0F1117] px-3 py-2.5 text-sm text-white focus:border-[#6366F1] focus:outline-none"
               />
             </div>
-            <div className="sm:col-span-2">
-              <label htmlFor="google_review_url" className="block text-sm font-medium text-gray-300">
-                Enlace de reseñas de Google
-              </label>
-              <div className="mt-1 flex gap-2">
-                <input
-                  id="google_review_url"
-                  type="text"
-                  inputMode="url"
-                  placeholder="https://g.page/r/.../review"
-                  value={form.google_review_url || ""}
-                  onChange={(e) => updateField("google_review_url", e.target.value)}
-                  aria-invalid={reviewUrlError ? true : undefined}
-                  aria-describedby="google_review_url-help"
-                  className={`block w-full rounded-lg border bg-[#0F1117] px-3 py-2.5 text-sm text-white focus:border-[#6366F1] focus:outline-none ${
-                    reviewUrlError ? "border-red-500/60" : "border-[#2D3147]"
-                  }`}
-                />
-                {/* Enlace (no botón) para que funcione también con el formulario en solo lectura */}
-                {reviewTestUrl && (
-                  <a
-                    href={reviewTestUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="inline-flex shrink-0 items-center rounded-lg border border-[#2D3147] px-3 py-2.5 text-sm font-medium text-gray-300 hover:bg-[#1F2234] hover:text-white transition"
-                  >
-                    Probar enlace
-                  </a>
-                )}
-              </div>
-              {reviewUrlError && <p className="mt-1 text-xs text-red-400">{reviewUrlError}</p>}
-              <p id="google_review_url-help" className="mt-1 text-xs text-gray-500">
-                En tu Perfil de Empresa de Google, usa la opción para pedir reseñas, copia el enlace y pégalo aquí.
-                También puedes pegar el Place ID.
-              </p>
-            </div>
+            {isPlatformAdmin && <GoogleReviewSummary restaurantId={id} />}
           </div>
         </div>
 

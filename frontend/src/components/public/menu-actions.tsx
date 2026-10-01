@@ -14,15 +14,15 @@ const pillStyle = { borderColor: "var(--color-primary)", color: "var(--color-pri
 
 export default function MenuActions({
   loyalty,
-  googleReviewUrl,
+  reviewUrl,
 }: {
   loyalty?: PublicLoyalty | null;
-  googleReviewUrl?: string | null;
+  reviewUrl?: string | null;
 }) {
   const [showLoyalty, setShowLoyalty] = useState(false);
   const closeLoyalty = useCallback(() => setShowLoyalty(false), []);
 
-  if (!loyalty && !googleReviewUrl) return null;
+  if (!loyalty && !reviewUrl) return null;
 
   return (
     <>
@@ -39,9 +39,9 @@ export default function MenuActions({
             Programa de fidelidad
           </button>
         )}
-        {googleReviewUrl && (
+        {reviewUrl && (
           <a
-            href={googleReviewUrl}
+            href={reviewUrl}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Déjanos tu reseña en Google (se abre en una pestaña nueva)"
@@ -49,7 +49,7 @@ export default function MenuActions({
             style={pillStyle}
           >
             <Star className="h-4 w-4" />
-            Déjanos tu reseña
+            Déjanos tu reseña en Google
           </a>
         )}
       </div>

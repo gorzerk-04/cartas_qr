@@ -77,8 +77,6 @@ export interface Restaurant {
   whatsapp?: string;
   email?: string;
   website?: string;
-  // Enlace para dejar reseñas en Google (Fase 5); null = sin botón en la carta
-  google_review_url?: string | null;
   address?: string;
   city?: string;
   country: string;
@@ -104,7 +102,6 @@ export interface RestaurantCreate {
   whatsapp?: string;
   email?: string;
   website?: string;
-  google_review_url?: string | null;
   address?: string;
   city?: string;
   country?: string;
@@ -279,8 +276,8 @@ export interface PublicRestaurant {
   whatsapp?: string;
   email?: string;
   website?: string;
-  // Solo viene si el restaurante tiene enlace de reseñas de Google
-  google_review_url?: string | null;
+  // Enlace para dejar reseña en Google (el oficial si existe, si no el generado); null = sin botón
+  review_url?: string | null;
   address?: string;
   city?: string;
   country: string;
@@ -296,6 +293,26 @@ export interface PublicLoyalty {
   visits_required: number;
   reward_description: string;
   min_hours_between_visits?: number;
+}
+
+// ---------------------------------------------------------------- reseñas de Google (solo admin)
+export interface GoogleReviewResolveResult {
+  nombre: string | null;
+  ftid: string;
+  review_url: string;
+}
+
+export interface GoogleReviewSettings {
+  google_maps_url: string | null;
+  google_place_ftid: string | null;
+  google_review_url: string | null;
+  google_review_url_override: string | null;
+}
+
+// Campo ausente = no se toca; null = se quita. El review_url lo genera el backend.
+export interface GoogleReviewSettingsInput {
+  google_maps_url?: string | null;
+  google_review_url_override?: string | null;
 }
 
 // ---------------------------------------------------------------- fidelización

@@ -25,6 +25,8 @@ export default function AdminLayout({
     pathname === "/admin/users" ||
     pathname.startsWith("/admin/users/") ||
     pathname === "/admin/qr" ||
+    pathname === "/admin/google-reviews" ||
+    pathname.startsWith("/admin/google-reviews/") ||
     /^\/admin\/restaurants\/[^/]+\/qr\/?$/.test(pathname);
   const mustRedirectToChangePassword = isAuthenticated && mustChangePassword && !isChangePasswordPage;
   const mustRedirectToDashboard = isAuthenticated && !isPlatformAdmin && isAdminOnlyRoute;
