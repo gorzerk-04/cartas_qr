@@ -3,7 +3,7 @@ from uuid import UUID
 from datetime import time as dt_time
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.api.deps import get_db, get_current_user, accessible_restaurant, ensure_platform_admin
 from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.repositories.restaurant import restaurant_repository
@@ -60,6 +60,7 @@ def update_operating_hours(
     Actualizar todos los horarios de atención de un restaurante (7 días).
     Reemplaza los horarios existentes con los nuevos datos proporcionados.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=restaurant_id)
     if not restaurant:
         raise HTTPException(

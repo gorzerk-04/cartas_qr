@@ -105,18 +105,12 @@ def update_restaurant(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Actualizar datos de un restaurante. El slug es inmutable y será ignorado.
+    Actualizar datos de un restaurante. Solo administradores de plataforma.
 
-    El slug es inmutable para todos los roles (RestaurantUpdate no lo acepta).
-    Un dueño no puede cambiar `is_active` (403); sí puede publicar/despublicar.
+    El dueño tiene la información general en solo lectura (403). El slug es
+    inmutable para todos los roles (RestaurantUpdate no lo acepta).
     """
-    if not current_user.is_platform_admin:
-        sent = obj_in.model_dump(exclude_unset=True)
-        if "is_active" in sent and sent["is_active"] != restaurant.is_active:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Solo un administrador de plataforma puede activar o suspender un restaurante",
-            )
+    ensure_platform_admin(current_user)
     return restaurant_service.update_restaurant(db, id=id, obj_in=obj_in)
 
 
@@ -154,6 +148,7 @@ async def upload_restaurant_logo(
     """
     Subir o reemplazar el logo del restaurante.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(
@@ -186,6 +181,7 @@ def delete_restaurant_logo(
     """
     Quitar el logo del restaurante y borrar el archivo asociado.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(
@@ -215,6 +211,7 @@ async def upload_restaurant_cover(
     """
     Subir o reemplazar la imagen de portada del restaurante.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(
@@ -247,6 +244,7 @@ def delete_restaurant_cover(
     """
     Quitar la imagen de portada del restaurante y borrar el archivo asociado.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(
@@ -276,6 +274,7 @@ async def generate_restaurant_qr(
     """
     Generar (o regenerar) el código QR del restaurante, apuntando a su carta pública.
     """
+    ensure_platform_admin(current_user)
     restaurant = restaurant_repository.get(db, id=id)
     if not restaurant:
         raise HTTPException(

@@ -2,7 +2,7 @@ from typing import List
 from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
-from app.api.deps import get_db, get_current_user, accessible_restaurant
+from app.api.deps import get_db, get_current_user, accessible_restaurant, ensure_platform_admin
 from app.models.restaurant import Restaurant
 from app.models.user import User
 from app.schemas.restaurant_social import (
@@ -28,6 +28,7 @@ def create_social(
     """
     Agregar una red social al restaurante.
     """
+    ensure_platform_admin(current_user)
     return restaurant_social_service.create_social(db, restaurant_id=restaurant_id, obj_in=obj_in)
 
 
@@ -58,6 +59,7 @@ def update_social(
     """
     Actualizar la URL de una red social. La plataforma es inmutable.
     """
+    ensure_platform_admin(current_user)
     return restaurant_social_service.update_social(db, restaurant_id=restaurant_id, id=id, obj_in=obj_in)
 
 
@@ -73,5 +75,6 @@ def delete_social(
     """
     Eliminar una red social del restaurante.
     """
+    ensure_platform_admin(current_user)
     restaurant_social_service.delete_social(db, restaurant_id=restaurant_id, id=id)
     return

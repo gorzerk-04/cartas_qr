@@ -38,6 +38,7 @@ const navItems: NavItem[] = [
     label: "Códigos QR",
     href: "/admin/qr",
     icon: QrCode,
+    adminOnly: true,
   },
   {
     label: "Usuarios",

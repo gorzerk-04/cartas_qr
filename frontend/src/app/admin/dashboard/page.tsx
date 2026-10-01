@@ -47,13 +47,13 @@ export default function DashboardPage() {
       href: "#",
       title: "El análisis de vistas de la carta todavía no está disponible (planeado post-MVP)",
     },
-    {
+    ...(can("manageQr") ? [{
       label: "QR Generados",
       value: statsLoading ? "…" : String(stats?.qr_generated_count ?? 0),
       icon: QrCode,
       color: "#EC4899",
       href: "/admin/qr",
-    },
+    }] : []),
     {
       label: "Comensales",
       value: statsLoading ? "…" : String(stats?.customers_total ?? 0),
@@ -149,7 +149,7 @@ export default function DashboardPage() {
         <p className="mt-1 text-sm text-gray-400">
           {can("createRestaurant")
             ? "Comienza creando tu primer restaurante para generar su carta QR."
-            : "Gestiona la carta, los horarios y el código QR de tu restaurante."}
+            : "Gestiona la carta, los comensales y la fidelización de tu restaurante."}
         </p>
         <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {can("createRestaurant") && (
@@ -168,13 +168,15 @@ export default function DashboardPage() {
             <Eye className="h-5 w-5" />
             <span>Ver restaurantes</span>
           </Link>
-          <Link
-            href="/admin/qr"
-            className="flex items-center gap-3 rounded-lg border border-dashed border-[#2D3147] p-4 text-sm text-gray-400 hover:border-[#EC4899] hover:text-[#EC4899] transition"
-          >
-            <QrCode className="h-5 w-5" />
-            <span>Gestionar QR</span>
-          </Link>
+          {can("manageQr") && (
+            <Link
+              href="/admin/qr"
+              className="flex items-center gap-3 rounded-lg border border-dashed border-[#2D3147] p-4 text-sm text-gray-400 hover:border-[#EC4899] hover:text-[#EC4899] transition"
+            >
+              <QrCode className="h-5 w-5" />
+              <span>Gestionar QR</span>
+            </Link>
+          )}
         </div>
       </div>
     </div>
