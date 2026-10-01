@@ -17,6 +17,7 @@ from app.api.v1.stats import router as stats_router
 from app.api.v1.users import router as users_router
 from app.api.v1.customers import router as customers_router
 from app.api.v1.loyalty import router as loyalty_router
+from app.api.v1.google_reviews import router as google_reviews_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -55,6 +56,7 @@ app.include_router(stats_router, prefix="/api/v1/admin", tags=["📊 Stats"])
 app.include_router(users_router, prefix="/api/v1/admin/users", tags=["👥 Users"])
 app.include_router(customers_router, prefix="/api/v1/admin/restaurants", tags=["🧑 Customers"])
 app.include_router(loyalty_router, prefix="/api/v1/admin/restaurants", tags=["🎁 Loyalty"])
+app.include_router(google_reviews_router, prefix="/api/v1/admin", tags=["⭐ Google Reviews"])
 
 
 @app.get("/health", tags=["❤️ Health"])

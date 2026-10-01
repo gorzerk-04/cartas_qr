@@ -58,7 +58,7 @@ class PublicService:
             whatsapp=restaurant.whatsapp,
             email=restaurant.email,
             website=restaurant.website,
-            google_review_url=restaurant.google_review_url,
+            review_url=restaurant.google_review_url_override or restaurant.google_review_url,
             address=restaurant.address,
             city=restaurant.city,
             country=restaurant.country,

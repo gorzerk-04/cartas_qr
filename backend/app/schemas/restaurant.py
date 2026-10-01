@@ -5,8 +5,6 @@ from uuid import UUID
 from decimal import Decimal
 import re
 
-from app.core.google_review import normalize_google_review_url
-
 # Los colores de marca se inyectan tal cual como CSS custom properties en la carta
 # pública (ver menu/[slug]/layout.tsx). Sin validar el formato, un valor cualquiera
 # ("rojo", un typo) se guardaba con 200 y rompía silenciosamente el color de la marca.
@@ -23,11 +21,6 @@ def validate_hex_color(value: Optional[str]) -> Optional[str]:
     return value
 
 
-def validate_google_review_url(value: Optional[str]) -> Optional[str]:
-    # InvalidGoogleReviewUrlError hereda de ValueError: Pydantic lo convierte en 422
-    return normalize_google_review_url(value)
-
-
 class RestaurantBase(BaseModel):
     name: str = Field(..., max_length=200)
     slug: str = Field(..., max_length=100)
@@ -39,7 +32,6 @@ class RestaurantBase(BaseModel):
     whatsapp: Optional[str] = None
     email: Optional[EmailStr] = None
     website: Optional[str] = None
-    google_review_url: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     country: str = "Perú"
@@ -56,7 +48,6 @@ class RestaurantCreate(RestaurantBase):
     _validate_colors = field_validator(
         "primary_color", "secondary_color", "accent_color"
     )(validate_hex_color)
-    _validate_google_review_url = field_validator("google_review_url")(validate_google_review_url)
 
 
 class RestaurantUpdate(BaseModel):
@@ -69,7 +60,6 @@ class RestaurantUpdate(BaseModel):
     whatsapp: Optional[str] = None
     email: Optional[EmailStr] = None
     website: Optional[str] = None
-    google_review_url: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     country: Optional[str] = None
@@ -81,7 +71,6 @@ class RestaurantUpdate(BaseModel):
     _validate_colors = field_validator(
         "primary_color", "secondary_color", "accent_color"
     )(validate_hex_color)
-    _validate_google_review_url = field_validator("google_review_url")(validate_google_review_url)
 
 
 class RestaurantResponse(RestaurantBase):
