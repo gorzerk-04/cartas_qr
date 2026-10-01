@@ -7,7 +7,9 @@ export type Action =
   | "deleteRestaurant"
   | "editSlug"
   | "toggleActive"
-  | "manageUsers";
+  | "manageUsers"
+  | "editRestaurantInfo"
+  | "manageQr";
 
 export function isPlatformAdmin(user: User | null | undefined): boolean {
   return user?.role === "platform_admin";
@@ -19,6 +21,9 @@ export function can(user: User | null | undefined, action: Action): boolean {
     case "deleteRestaurant":
     case "toggleActive":
     case "manageUsers":
+    // Info general en solo lectura y sin acceso al QR para el dueño
+    case "editRestaurantInfo":
+    case "manageQr":
       return isPlatformAdmin(user);
     case "editSlug":
       // El slug es inmutable para todos: cambiarlo rompería los QR ya impresos

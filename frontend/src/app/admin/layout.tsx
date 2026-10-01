@@ -21,7 +21,11 @@ export default function AdminLayout({
   const isLoginPage = pathname === "/admin/login";
   const isChangePasswordPage = pathname === "/admin/change-password";
   // Rutas solo para administradores de plataforma (la seguridad real está en el backend)
-  const isAdminOnlyRoute = pathname === "/admin/users" || pathname.startsWith("/admin/users/");
+  const isAdminOnlyRoute =
+    pathname === "/admin/users" ||
+    pathname.startsWith("/admin/users/") ||
+    pathname === "/admin/qr" ||
+    /^\/admin\/restaurants\/[^/]+\/qr\/?$/.test(pathname);
   const mustRedirectToChangePassword = isAuthenticated && mustChangePassword && !isChangePasswordPage;
   const mustRedirectToDashboard = isAuthenticated && !isPlatformAdmin && isAdminOnlyRoute;
 

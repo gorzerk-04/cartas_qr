@@ -74,8 +74,26 @@ test.describe("Roles", () => {
     await page.goto(`/admin/restaurants/${ownRestaurantId}`);
     await expect(page.getByText("Visibilidad de la carta")).toBeVisible({ timeout: 15_000 });
     await expect(page.getByLabel("Activo")).toHaveCount(0);
-    await expect(page.getByLabel(/^Publicado/)).toBeVisible();
+    await expect(page.getByLabel(/^Publicado/)).toBeDisabled();
     await expect(page.locator("#slug")).toBeDisabled();
+    await expect(page.getByText("La información general es de solo lectura")).toBeVisible();
+    await expect(page.getByRole("button", { name: "Guardar Cambios" })).toHaveCount(0);
+    await page.close();
+  });
+
+  test("el dueño no ve la pestaña ni el menú de Código QR y /qr lo devuelve al dashboard", async () => {
+    const page = await ownerCtx.newPage();
+    await page.goto(`/admin/restaurants/${ownRestaurantId}`);
+    for (const tab of ["Info General", "Categorías", "Productos", "Check-in", "Comensales", "Fidelización"]) {
+      await expect(page.getByRole("link", { name: tab, exact: true })).toBeVisible({ timeout: 15_000 });
+    }
+    await expect(page.getByRole("link", { name: "Código QR" })).toHaveCount(0);
+    await expect(page.getByRole("link", { name: "Códigos QR" })).toHaveCount(0);
+
+    await page.goto(`/admin/restaurants/${ownRestaurantId}/qr`);
+    await page.waitForURL("**/admin/dashboard", { timeout: 15_000 });
+    await page.goto("/admin/qr");
+    await page.waitForURL("**/admin/dashboard", { timeout: 15_000 });
     await page.close();
   });
 

@@ -53,6 +53,7 @@ export default function EditRestaurantPage() {
   const id = params.id as string;
   const { can } = useAuth();
   const canToggleActive = can("toggleActive");
+  const canEdit = can("editRestaurantInfo");
 
   const { data: restaurant, isLoading: isLoadingRestaurant, error } = useRestaurant(id);
   const updateMutation = useUpdateRestaurant();
@@ -186,7 +187,14 @@ export default function EditRestaurantPage() {
         </div>
       )}
 
+      {!canEdit && (
+        <div className="rounded-lg border border-[#2D3147] bg-[#1A1D27] p-3 text-sm text-gray-400">
+          La información general es de solo lectura. Para cambiarla, contacta al administrador de la plataforma.
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-6">
+        <fieldset disabled={!canEdit} className="m-0 min-w-0 space-y-6 border-0 p-0">
         {/* Status toggles */}
         <div className="flex flex-col gap-4 rounded-xl border border-[#2D3147] bg-[#1A1D27] p-6 sm:flex-row sm:items-center sm:justify-between">
           <div>
@@ -467,7 +475,10 @@ export default function EditRestaurantPage() {
           </div>
         </div>
 
+        </fieldset>
+
         {/* Submit */}
+        {canEdit && (
         <div className="flex items-center justify-end gap-3 pt-2">
           <Link
             href="/admin/restaurants"
@@ -486,6 +497,7 @@ export default function EditRestaurantPage() {
             Guardar Cambios
           </button>
         </div>
+        )}
       </form>
     </div>
   );

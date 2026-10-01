@@ -5,6 +5,7 @@ import { useParams, usePathname } from "next/navigation";
 import Link from "next/link";
 import { ArrowLeft, Eye } from "lucide-react";
 import { useRestaurant } from "../../../../hooks/use-restaurants";
+import { useAuth } from "../../../../hooks/use-auth";
 
 export default function RestaurantDetailLayout({
   children,
@@ -15,17 +16,18 @@ export default function RestaurantDetailLayout({
   const pathname = usePathname();
   const id = params.id as string;
 
+  const { can } = useAuth();
   const { data: restaurant, isError, isLoading } = useRestaurant(id);
 
   const tabs = [
     { label: "Info General", href: `/admin/restaurants/${id}` },
     { label: "Categorías", href: `/admin/restaurants/${id}/categories` },
     { label: "Productos", href: `/admin/restaurants/${id}/products` },
-    { label: "Código QR", href: `/admin/restaurants/${id}/qr` },
+    { label: "Código QR", href: `/admin/restaurants/${id}/qr`, adminOnly: true },
     { label: "Check-in", href: `/admin/restaurants/${id}/check-in` },
     { label: "Comensales", href: `/admin/restaurants/${id}/customers` },
     { label: "Fidelización", href: `/admin/restaurants/${id}/loyalty` },
-  ];
+  ].filter((tab) => !tab.adminOnly || can("manageQr"));
   const rootHref = `/admin/restaurants/${id}`;
 
   return (
