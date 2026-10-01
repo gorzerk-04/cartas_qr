@@ -137,10 +137,6 @@ def test_dueno_hace_crud_en_su_restaurante(client, setup, owner_headers):
     rid = setup["own"]["id"]
     h = owner_headers
     assert client.get(f"{BASE}/{rid}", headers=h).status_code == 200
-    r = client.put(f"{BASE}/{rid}", headers=h, json={"name": "Renombrado", "is_published": True, "primary_color": "#112233"})
-    assert r.status_code == 200
-    assert r.json()["name"] == "Renombrado" and r.json()["is_published"] is True
-
     cat = client.post(f"{BASE}/{rid}/categories", headers=h, json={"name": "Postres"})
     assert cat.status_code == 201
     cid = cat.json()["id"]
@@ -151,19 +147,6 @@ def test_dueno_hace_crud_en_su_restaurante(client, setup, owner_headers):
     assert client.patch(f"{BASE}/{rid}/products/{pid}/status", headers=h, json={"status": "hidden"}).status_code == 200
     assert client.delete(f"{BASE}/{rid}/products/{pid}", headers=h).status_code == 204
     assert client.delete(f"{BASE}/{rid}/categories/{cid}", headers=h).status_code == 204
-
-    hours = [{"day_of_week": d, "open_time": "09:00", "close_time": "22:00", "is_closed": False} for d in range(7)]
-    assert client.put(f"{BASE}/{rid}/hours", headers=h, json={"hours": hours}).status_code == 200
-    assert client.get(f"{BASE}/{rid}/hours", headers=h).status_code == 200
-
-    soc = client.post(f"{BASE}/{rid}/socials", headers=h, json={"platform": "facebook", "url": "https://facebook.com/x"})
-    assert soc.status_code == 201
-    sid = soc.json()["id"]
-    assert client.put(f"{BASE}/{rid}/socials/{sid}", headers=h, json={"url": "https://facebook.com/y"}).status_code == 200
-    assert client.delete(f"{BASE}/{rid}/socials/{sid}", headers=h).status_code == 204
-
-    assert client.post(f"{BASE}/{rid}/qr", headers=h, json={}).status_code == 200
-    assert client.post(f"{BASE}/{rid}/logo", headers=h, files={"file": _png()}).status_code == 200
 
 
 # ---------- restricciones del dueño (403) ----------
@@ -178,20 +161,37 @@ def test_dueno_no_puede_eliminar_su_restaurante(client, setup, owner_headers):
     assert client.get(f"{BASE}/{setup['own']['id']}", headers=owner_headers).status_code == 200
 
 
-def test_dueno_no_puede_cambiar_slug_ni_is_active(client, setup, owner_headers):
+def test_dueno_tiene_la_info_general_en_solo_lectura(client, setup, owner_headers):
     rid = setup["own"]["id"]
-    # El slug es inmutable para todos los roles: el campo se ignora y el valor no cambia
-    client.put(f"{BASE}/{rid}", headers=owner_headers, json={"slug": "otro-slug"})
-    assert client.put(f"{BASE}/{rid}", headers=owner_headers, json={"is_active": False}).status_code == 403
-    current = client.get(f"{BASE}/{rid}", headers=owner_headers).json()
-    assert current["slug"] == "propio" and current["is_active"] is True
+    h = owner_headers
+    assert client.get(f"{BASE}/{rid}", headers=h).status_code == 200
+    assert client.get(f"{BASE}/{rid}/hours", headers=h).status_code == 200
+    assert client.get(f"{BASE}/{rid}/socials", headers=h).status_code == 200
+
+    assert client.put(f"{BASE}/{rid}", headers=h, json={"name": "Renombrado"}).status_code == 403
+    assert client.put(f"{BASE}/{rid}", headers=h, json={"is_published": True}).status_code == 403
+    assert client.put(f"{BASE}/{rid}", headers=h, json={"is_active": False}).status_code == 403
+    hours = [{"day_of_week": d, "open_time": "09:00", "close_time": "22:00", "is_closed": False} for d in range(7)]
+    assert client.put(f"{BASE}/{rid}/hours", headers=h, json={"hours": hours}).status_code == 403
+    assert client.post(f"{BASE}/{rid}/socials", headers=h, json={"platform": "facebook", "url": "https://facebook.com/x"}).status_code == 403
+    assert client.post(f"{BASE}/{rid}/logo", headers=h, files={"file": _png()}).status_code == 403
+    assert client.delete(f"{BASE}/{rid}/logo", headers=h).status_code == 403
+    assert client.post(f"{BASE}/{rid}/cover", headers=h, files={"file": _png()}).status_code == 403
+    assert client.delete(f"{BASE}/{rid}/cover", headers=h).status_code == 403
+
+    current = client.get(f"{BASE}/{rid}", headers=h).json()
+    assert current["is_active"] is True
 
 
-def test_dueno_puede_reenviar_slug_e_is_active_sin_cambios(client, setup, owner_headers):
-    # El formulario del panel envía todos los campos en cada guardado
+def test_dueno_no_tiene_acceso_al_codigo_qr(client, setup, owner_headers):
+    assert client.post(f"{BASE}/{setup['own']['id']}/qr", headers=owner_headers, json={}).status_code == 403
+
+
+def test_admin_si_edita_info_general_y_qr(client, setup, admin_headers):
     rid = setup["own"]["id"]
-    r = client.put(f"{BASE}/{rid}", headers=owner_headers, json={"slug": "propio", "is_active": True, "name": "Igual"})
-    assert r.status_code == 200
+    r = client.put(f"{BASE}/{rid}", headers=admin_headers, json={"name": "Renombrado", "is_published": True})
+    assert r.status_code == 200 and r.json()["name"] == "Renombrado"
+    assert client.post(f"{BASE}/{rid}/qr", headers=admin_headers, json={}).status_code == 200
 
 
 # ---------- revocación ----------
