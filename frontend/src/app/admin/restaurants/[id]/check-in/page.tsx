@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
 import { useCheckIn, useLoyaltyProgram, useRedeem, useVoidVisit } from "../../../../../hooks/use-loyalty";
-import { getErrorCode } from "../../../../../lib/api-error";
+import { getErrorCode, getErrorMessage } from "../../../../../lib/api-error";
 import { getLoyaltyErrorMessage } from "../../../../../lib/loyalty-errors";
 import { CheckInResult } from "../../../../../types";
 import ConfirmDialog from "../../../../../components/admin/confirm-dialog";
@@ -18,7 +18,8 @@ export default function CheckInPage() {
   const params = useParams();
   const id = params.id as string;
 
-  const { data: program, isLoading } = useLoyaltyProgram(id);
+  // `program` es null si no existe (404); cualquier otro fallo de la API es `programError`
+  const { data: program, isLoading, error: programError, refetch, isFetching } = useLoyaltyProgram(id);
   const checkInMutation = useCheckIn(id);
   const redeemMutation = useRedeem(id);
   const voidMutation = useVoidVisit(id, "");
@@ -118,6 +119,33 @@ export default function CheckInPage() {
     return (
       <div className="flex h-64 items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-[#6366F1]" />
+      </div>
+    );
+  }
+
+  // Si no se pudo leer el programa (servidor caído, error 500…), no se afirma que "no está
+  // configurado": se muestra el error real y se ofrece reintentar.
+  if (programError) {
+    return (
+      <div className="mx-auto max-w-md">
+        <div role="alert" className="flex gap-3 rounded-xl border border-red-500/20 bg-red-500/10 p-4 text-sm text-red-400">
+          <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0" />
+          <div className="space-y-2">
+            <p>
+              No se pudo cargar el programa de fidelización.{" "}
+              {getErrorMessage(programError, "Revisa la conexión con el servidor e inténtalo de nuevo.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              disabled={isFetching}
+              className="inline-flex items-center gap-2 font-semibold underline disabled:opacity-50"
+            >
+              {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+              Reintentar
+            </button>
+          </div>
+        </div>
       </div>
     );
   }

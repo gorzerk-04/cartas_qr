@@ -149,11 +149,11 @@ E2E_ADMIN_PASSWORD='<clave-admin>' E2E_OWNER_PASSWORD='<clave-dueño>' pnpm test
 
 #### Suite E2E de fidelización (`loyalty.spec.ts`)
 
-Usa los mismos datos de `seed_e2e.py`, que además deja "E2E Propio" con el **programa de fidelización activo** (2 visitas para canjear, sin tiempo mínimo entre visitas). Comprueba, en el navegador y como dueño: el check-in de un celular nuevo (pide nombre y consentimiento) que muestra 1/2; un segundo check-in que llega a 2/2 y ofrece "Canjear"; y el canje (con confirmación) que deja el saldo en 0. Cada corrida usa un celular nuevo, así que se puede repetir sin limpiar la base.
+Usa los mismos datos de `seed_e2e.py`, que además deja "E2E Propio" con el **programa de fidelización activo** (2 visitas para canjear, sin tiempo mínimo entre visitas). Comprueba, en el navegador y como dueño: el check-in de un celular nuevo (pide nombre y consentimiento) que muestra 1/2; un segundo check-in que llega a 2/2 y ofrece "Canjear"; y el canje (con confirmación) que deja el saldo en 0. También simula un error 500 al leer el programa y comprueba que el check-in muestra el error con "Reintentar" en lugar de decir que el programa no está configurado. Cada corrida usa un celular nuevo, así que se puede repetir sin limpiar la base.
 
 #### Suite E2E de los botones de la carta (`public-actions.spec.ts`)
 
-Usa la carta pública, sin iniciar sesión. `seed_e2e.py` deja a "E2E Propio" con enlace de reseñas de Google y a "E2E Ajeno" sin enlace ni programa activo. Comprueba que el botón "Déjanos tu reseña" apunta al enlace y abre una pestaña nueva, que "Programa de fidelidad" abre el modal con la meta y la recompensa (y se cierra con Escape o tocando fuera), y que sin enlace ni programa la fila de botones no aparece.
+Usa la carta pública, sin iniciar sesión. `seed_e2e.py` deja a "E2E Propio" con enlace de reseñas de Google y a "E2E Ajeno" sin enlace ni programa activo. Comprueba que el botón "Déjanos tu reseña en Google" apunta al enlace y abre una pestaña nueva, que "Programa de fidelidad" abre el modal con la meta y la recompensa (y se cierra con Escape o tocando fuera), y que sin enlace ni programa la fila de botones no aparece.
 
 #### Suite E2E de reseñas de Google (`google-reviews.spec.ts`)
 
@@ -163,4 +163,13 @@ Corre junto con las demás: `pnpm test:e2e` ejecuta `auth`, `google-reviews`, `l
 
 Variables opcionales: `E2E_ADMIN_USERNAME` (def. `admin`), `E2E_OWNER_USERNAME` (def. `e2e_owner`), `E2E_OWNER_EMAIL`, `E2E_API_URL` (def. `http://localhost:8000/api/v1`).
 
-> El login tiene rate limit (5 intentos por minuto por IP). Por eso Playwright corre con un solo worker, y `roles.spec.ts` y `loyalty.spec.ts` inician sesión por la API una vez por rol y, si encuentran un 429, esperan 62 s y reintentan: una corrida completa puede tardar más de un minuto. Si repites la suite completa en menos de un minuto, los tests de login de `auth.spec.ts` pueden fallar por el mismo límite: espera y vuelve a correr.
+> El login tiene rate limit (5 intentos por minuto por IP). Por eso Playwright corre con un solo worker, y `roles.spec.ts`, `loyalty.spec.ts` y `google-reviews.spec.ts` inician sesión por la API una vez por rol y, si encuentran un 429, esperan 62 s y reintentan: una corrida completa puede tardar más de un minuto. Si repites la suite completa en menos de un minuto, los tests de login de `auth.spec.ts` pueden fallar por el mismo límite: espera y vuelve a correr.
+
+## Reseñas de Google (solo admin)
+
+En el panel, **Reseñas de Google** (solo visible para el administrador de plataforma) convierte el enlace de Google Maps de un local (Compartir → Copiar enlace, p. ej. `https://maps.app.goo.gl/...`) en un enlace que abre directamente la ventana para escribir una reseña, y lo asigna a un restaurante. Su carta muestra entonces el botón "Déjanos tu reseña en Google".
+
+- **Enlace generado:** `https://search.google.com/local/writereview?placeid=<Place ID>`. El Place ID (`ChIJ...`) se calcula sin llamar a Google a partir del ID del lugar que trae el enlace de Maps (`0x...:0x...`). La consulta a Google solo ocurre al expandir un enlace corto, cuando el admin usa la herramienta o guarda; la carta nunca llama a Google.
+- **Enlace oficial (recomendado si existe):** el del Perfil de Empresa de Google ("Pedir reseñas", `https://g.page/r/.../review`) o un Place ID suelto. Si está cargado, la carta lo usa en lugar del generado.
+- **Seguridad:** solo se aceptan enlaces https de Google y cada redirección se valida contra hosts de Google (máximo 5). El dueño de restaurante no ve esta sección y la API le responde 403.
+- **Enlaces guardados con un formato anterior:** abre el restaurante en "Reseñas de Google" y pulsa **Guardar** sin cambiar nada; el enlace se regenera desde el ID guardado, sin consultar a Google.
