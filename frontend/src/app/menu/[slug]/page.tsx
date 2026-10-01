@@ -4,7 +4,6 @@ import { getPublicRestaurant } from "../../../services/public";
 import RestaurantHeader from "../../../components/public/restaurant-header";
 import MenuExperience from "../../../components/public/menu-experience";
 import WhatsAppFloatingButton from "../../../components/public/whatsapp-floating-button";
-import LoyaltyBanner from "../../../components/public/loyalty-banner";
 
 type Props = {
   params: Promise<{ slug: string }>;
@@ -43,7 +42,6 @@ export default async function PublicMenuPage({ params }: Props) {
   return (
     <>
       <RestaurantHeader restaurant={restaurant} />
-      {restaurant.loyalty && <LoyaltyBanner loyalty={restaurant.loyalty} />}
       <MenuExperience restaurant={restaurant} />
       {restaurant.whatsapp && <WhatsAppFloatingButton whatsapp={restaurant.whatsapp} />}
     </>

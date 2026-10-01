@@ -108,7 +108,7 @@ function ProgramForm({ restaurantId, restaurantName, slug, program }: FormProps)
         <div>
           <span className="text-sm font-medium text-white">Programa de fidelización</span>
           <p className="text-xs text-gray-400">
-            Activo: se pueden registrar visitas y canjes, y la carta pública muestra el banner.
+            Activo: se pueden registrar visitas y canjes, y la carta pública muestra el botón &ldquo;Programa de fidelidad&rdquo;.
           </p>
         </div>
         <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-300">

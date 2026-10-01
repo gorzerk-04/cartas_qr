@@ -1,6 +1,7 @@
 import { MapPin } from "lucide-react";
 import { PublicRestaurant } from "../../types";
 import { getNextOpeningLabel } from "../../lib/schedule";
+import MenuActions from "./menu-actions";
 
 export default function RestaurantHeader({ restaurant }: { restaurant: PublicRestaurant }) {
   const closedLabel = !restaurant.is_open_now ? getNextOpeningLabel(restaurant.schedules) : null;
@@ -45,6 +46,8 @@ export default function RestaurantHeader({ restaurant }: { restaurant: PublicRes
             </p>
           )}
         </div>
+
+        <MenuActions loyalty={restaurant.loyalty} googleReviewUrl={restaurant.google_review_url} />
 
         {!restaurant.is_open_now && (
           <div className="mb-4 rounded-lg bg-amber-50 px-4 py-2.5 text-sm font-medium text-amber-800">
