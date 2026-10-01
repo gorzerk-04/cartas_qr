@@ -8,12 +8,14 @@ Flujo:
    validando cada salto contra los hosts de Google (protección SSRF, máximo 5 saltos).
    Si termina en consent.google.com, usa su parámetro `continue`.
 2. parse_maps_url: extrae el ftid (`?ftid=` o `0x...:0x...` dentro de `data=`) y el nombre.
-3. build_review_link: https://www.google.com/search?q={nombre}#lrd={ftid},3,,,,
-   (el ",3" abre el diálogo para escribir la reseña).
+3. build_review_link: https://www.google.com/maps?cid={cid}, donde cid es la segunda parte
+   del ftid en decimal. Lleva siempre a la ficha exacta del local en Google Maps (desde ahí el
+   comensal toca "Escribir una reseña"). Se descartó el formato search?q={nombre}#lrd={ftid},3
+   porque, si hay locales con el mismo nombre, Google muestra una lista y no abre la reseña.
 """
 import re
 from typing import Optional, Tuple
-from urllib.parse import parse_qs, quote_plus, unquote_plus, urljoin, urlsplit
+from urllib.parse import parse_qs, unquote_plus, urljoin, urlsplit
 
 import httpx
 
@@ -31,7 +33,6 @@ SHORT_LINK_HOSTS = {"maps.app.goo.gl", "goo.gl"}
 CONSENT_HOST = "consent.google.com"
 MAX_REDIRECTS = 5
 TIMEOUT_SECONDS = 10.0
-MAX_REVIEW_URL_LENGTH = 500  # tamaño de restaurants.google_review_url
 
 REQUEST_HEADERS = {
     "User-Agent": (
@@ -184,12 +185,10 @@ def parse_maps_url(url: str) -> Tuple[str, Optional[str]]:
     return ftid.lower(), (name or None)
 
 
-def build_review_link(ftid: str, nombre: Optional[str]) -> str:
-    query = quote_plus(nombre) if nombre else ""
-    link = f"https://www.google.com/search?q={query}#lrd={ftid},3,,,,"
-    if len(link) > MAX_REVIEW_URL_LENGTH:
-        raise ReviewLinkError("El nombre del lugar es demasiado largo para generar el enlace")
-    return link
+def build_review_link(ftid: str, nombre: Optional[str] = None) -> str:
+    """Enlace a la ficha exacta del local en Google Maps. `nombre` no se usa: el cid basta."""
+    cid = int(ftid.split(":")[1], 16)
+    return f"https://www.google.com/maps?cid={cid}"
 
 
 def resolve_review_link(maps_url: str, *, transport: Optional[httpx.BaseTransport] = None) -> dict:

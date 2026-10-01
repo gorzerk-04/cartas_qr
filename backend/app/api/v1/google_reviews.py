@@ -69,7 +69,11 @@ def update_google_review_settings(
         maps_url = (sent["google_maps_url"] or "").strip() or None
         if maps_url is None:
             changes.update(google_maps_url=None, google_place_ftid=None, google_review_url=None)
-        elif maps_url != restaurant.google_maps_url or not restaurant.google_review_url:
+        elif maps_url == restaurant.google_maps_url and restaurant.google_place_ftid:
+            # Mismo enlace: no se vuelve a consultar a Google, pero el enlace de reseña se
+            # regenera desde el ftid guardado (actualiza enlaces creados con un formato anterior)
+            changes["google_review_url"] = google_reviews.build_review_link(restaurant.google_place_ftid)
+        else:
             try:
                 resolved = google_reviews.resolve_review_link(maps_url)
             except ReviewLinkError as exc:

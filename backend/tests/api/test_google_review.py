@@ -26,7 +26,7 @@ LONG = (
     "?entry=tts"
 )
 FTID = "0x91a7c3749150a1f7:0xb61bbbe27d37f437"
-REVIEW = "https://www.google.com/search?q=Chifa+Taiwan#lrd=0x91a7c3749150a1f7:0xb61bbbe27d37f437,3,,,,"
+REVIEW = "https://www.google.com/maps?cid=13122288520711894071"
 OVERRIDE = "https://g.page/r/CbAbCdEf123/review"
 
 
@@ -78,7 +78,7 @@ def test_url_larga_directa_no_llama_a_google():
 def test_url_con_parametro_ftid():
     url = "https://maps.google.com/?ftid=0xABC123:0xDEF456&q=Algo"
     assert parse_maps_url(url) == ("0xabc123:0xdef456", None)
-    assert build_review_link("0xabc123:0xdef456", None) == "https://www.google.com/search?q=#lrd=0xabc123:0xdef456,3,,,,"
+    assert build_review_link("0xabc123:0xdef456") == f"https://www.google.com/maps?cid={0xdef456}"
 
 
 def test_redireccion_via_consent_google_com():
@@ -225,6 +225,18 @@ def test_put_no_vuelve_a_llamar_a_google_si_el_enlace_no_cambio(client, admin_he
         r = client.put(url, headers=admin_headers,
                        json={"google_maps_url": SHORT, "google_review_url_override": OVERRIDE})
     assert r.status_code == 200 and r.json()["google_review_url_override"] == OVERRIDE
+
+
+def test_guardar_sin_cambiar_el_enlace_regenera_el_formato_desde_el_ftid(client, admin_headers, resto, db):
+    # Un enlace guardado con el formato anterior (search?q=...#lrd=) se actualiza al guardar
+    resto.google_maps_url = LONG
+    resto.google_place_ftid = FTID
+    resto.google_review_url = "https://www.google.com/search?q=Chifa+Taiwan#lrd=" + FTID + ",3,,,,"
+    db.commit()
+    with mock.patch.object(google_reviews, "resolve_review_link", side_effect=AssertionError("sin red")):
+        r = client.put(f"{BASE}/restaurants/{resto.id}/google-review", headers=admin_headers,
+                       json={"google_maps_url": LONG})
+    assert r.status_code == 200 and r.json()["google_review_url"] == REVIEW
 
 
 def test_put_valida_el_override(client, admin_headers, resto):

@@ -15,7 +15,7 @@ const SHORT = "https://maps.app.goo.gl/ypMDFVAFDyfr9xFY6";
 const LONG =
   "https://www.google.com/maps/place/Chifa+Taiwan/@-9.9554469,-76.2486745,21z/data=!4m6!3m5" +
   "!1s0x91a7c3749150a1f7:0xb61bbbe27d37f437!8m2!3d-9.9554923!4d-76.2486634?entry=tts";
-const REVIEW = "https://www.google.com/search?q=Chifa+Taiwan#lrd=0x91a7c3749150a1f7:0xb61bbbe27d37f437,3,,,,";
+const REVIEW = "https://www.google.com/maps?cid=13122288520711894071";
 
 test.describe("Reseñas de Google (admin)", () => {
   test.describe.configure({ mode: "serial", timeout: 120_000 });

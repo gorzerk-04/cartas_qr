@@ -68,8 +68,9 @@ function ConverterTool() {
       <h2 className="text-base font-semibold text-white">Convertir enlace de Google Maps</h2>
       <p className="mt-1 text-sm text-gray-400">
         En Google Maps abre la ficha del local, toca <strong>Compartir</strong> y luego{" "}
-        <strong>Copiar enlace</strong>. Pégalo aquí para obtener el enlace que abre directamente la
-        ventana para dejar una reseña.
+        <strong>Copiar enlace</strong>. Pégalo aquí para obtener el enlace a la ficha exacta del local,
+        donde el comensal toca &ldquo;Escribir una reseña&rdquo;. Para abrir directo la ventana de reseña,
+        usa el enlace oficial del Perfil de Empresa.
       </p>
 
       <form onSubmit={submit} className="mt-4 space-y-2">
