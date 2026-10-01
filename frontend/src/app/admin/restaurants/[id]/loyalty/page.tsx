@@ -271,7 +271,7 @@ export default function LoyaltyProgramPage() {
   const params = useParams();
   const id = params.id as string;
   const { data: restaurant } = useRestaurant(id);
-  const { data: program, isLoading, error } = useLoyaltyProgram(id);
+  const { data: program, isLoading, error, refetch, isFetching } = useLoyaltyProgram(id);
 
   if (isLoading || !restaurant) {
     return (
@@ -282,8 +282,20 @@ export default function LoyaltyProgramPage() {
   }
   if (error) {
     return (
-      <div className="rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-sm text-red-400">
-        No se pudo cargar el programa de fidelización.
+      <div role="alert" className="space-y-2 rounded-xl border border-red-500/20 bg-red-500/10 p-6 text-center text-sm text-red-400">
+        <p>
+          No se pudo cargar el programa de fidelización.{" "}
+          {getLoyaltyErrorMessage(error, "Revisa la conexión con el servidor e inténtalo de nuevo.")}
+        </p>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="inline-flex items-center gap-2 font-semibold underline disabled:opacity-50"
+        >
+          {isFetching && <Loader2 className="h-4 w-4 animate-spin" />}
+          Reintentar
+        </button>
       </div>
     );
   }

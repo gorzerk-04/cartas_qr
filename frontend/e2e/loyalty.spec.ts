@@ -87,4 +87,22 @@ test.describe("Fidelización", () => {
     await expect(page.getByText("Postre e2e gratis").first()).toBeVisible();
     await page.close();
   });
+
+  test("si la API del programa falla, el check-in muestra el error y no 'sin configurar'", async () => {
+    const page = await ownerCtx.newPage();
+    let fail = true;
+    await page.route("**/loyalty/program", (route) =>
+      fail ? route.fulfill({ status: 500, body: "Internal Server Error" }) : route.continue()
+    );
+    await page.goto(`/admin/restaurants/${restaurantId}/check-in`);
+
+    await expect(page.getByText("No se pudo cargar el programa de fidelización")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("todavía no se configuró")).toHaveCount(0);
+
+    fail = false;
+    await page.getByRole("button", { name: "Reintentar" }).click();
+    await expect(page.getByLabel("Celular del comensal")).toBeVisible({ timeout: 15_000 });
+    await expect(page.getByText("No se pudo cargar el programa de fidelización")).toHaveCount(0);
+    await page.close();
+  });
 });
