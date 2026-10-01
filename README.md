@@ -155,7 +155,11 @@ Usa los mismos datos de `seed_e2e.py`, que además deja "E2E Propio" con el **pr
 
 Usa la carta pública, sin iniciar sesión. `seed_e2e.py` deja a "E2E Propio" con enlace de reseñas de Google y a "E2E Ajeno" sin enlace ni programa activo. Comprueba que el botón "Déjanos tu reseña" apunta al enlace y abre una pestaña nueva, que "Programa de fidelidad" abre el modal con la meta y la recompensa (y se cierra con Escape o tocando fuera), y que sin enlace ni programa la fila de botones no aparece.
 
-Corre junto con las demás: `pnpm test:e2e` ejecuta `auth`, `loyalty`, `public-actions` y `roles` (necesita `E2E_OWNER_PASSWORD`; `roles` también `E2E_ADMIN_PASSWORD`).
+#### Suite E2E de reseñas de Google (`google-reviews.spec.ts`)
+
+Como admin: convierte un enlace de Maps en la pantalla "Reseñas de Google" (la respuesta de `/admin/google-review/resolve` se simula, no sale a internet), lo copia y comprueba el botón "Probar"; luego lo asigna a "E2E Propio" usando el enlace largo de Maps del seed, que el backend resuelve sin red. Como dueño: no ve la sección en el menú y `/admin/google-reviews` lo devuelve al dashboard.
+
+Corre junto con las demás: `pnpm test:e2e` ejecuta `auth`, `google-reviews`, `loyalty`, `public-actions` y `roles` (necesita `E2E_OWNER_PASSWORD`; `roles` y `google-reviews` también `E2E_ADMIN_PASSWORD`).
 
 Variables opcionales: `E2E_ADMIN_USERNAME` (def. `admin`), `E2E_OWNER_USERNAME` (def. `e2e_owner`), `E2E_OWNER_EMAIL`, `E2E_API_URL` (def. `http://localhost:8000/api/v1`).
 
