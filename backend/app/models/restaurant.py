@@ -26,6 +26,8 @@ class Restaurant(Base, AuditMixin):
     whatsapp = Column(String(20), nullable=True)
     email = Column(String(255), nullable=True)
     website = Column(String(500), nullable=True)
+    # Enlace para dejar reseñas en Google (Fase 5); NULL = sin botón en la carta
+    google_review_url = Column(String(500), nullable=True)
     
     # Location
     address = Column(Text, nullable=True)
