@@ -1,11 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 // Fase 5: fila de acciones de la carta pública. No inicia sesión (carta pública).
-// Requiere `python scripts/seed_e2e.py`: "E2E Propio" tiene programa activo y enlace de
-// reseñas; "E2E Ajeno" no tiene ninguno de los dos.
+// Requiere `python scripts/seed_e2e.py`: "E2E Propio" tiene programa activo y `review_url`
+// (generado desde su enlace de Maps); "E2E Ajeno" no tiene ninguno de los dos.
 const OWN_SLUG = "e2e-propio";
 const OTHER_SLUG = "e2e-ajeno";
-const REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4";
+const REVIEW_URL = "https://www.google.com/search?q=Chifa+Taiwan#lrd=0x91a7c3749150a1f7:0xb61bbbe27d37f437,3,,,,";
 
 test.describe("Botones de la carta", () => {
   test("con enlace, el botón de reseña abre Google en una pestaña nueva", async ({ page }) => {

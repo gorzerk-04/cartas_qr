@@ -28,8 +28,12 @@ from app.services.loyalty import default_consent_text  # noqa: E402
 
 OWN_SLUG = "e2e-propio"
 OTHER_SLUG = "e2e-ajeno"
-# Enlace de reseñas de prueba (Place ID de ejemplo de la documentación de Google)
-E2E_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJN1t_tDeuEmsRUsoyG83frY4"
+# Reseñas de prueba: enlace largo de Google Maps (no requiere red) y el enlace que genera
+E2E_MAPS_URL = (
+    "https://www.google.com/maps/place/Chifa+Taiwan/@-9.9554469,-76.2486745,21z/data=!4m6!3m5"
+    "!1s0x91a7c3749150a1f7:0xb61bbbe27d37f437!8m2!3d-9.9554923!4d-76.2486634?entry=tts"
+)
+E2E_REVIEW_URL = "https://www.google.com/search?q=Chifa+Taiwan#lrd=0x91a7c3749150a1f7:0xb61bbbe27d37f437,3,,,,"
 
 
 def _require(name: str) -> str:
@@ -55,7 +59,7 @@ def _upsert_user(db, *, username, email, password, role):
     return user
 
 
-def _upsert_restaurant(db, *, name, slug, google_review_url=None):
+def _upsert_restaurant(db, *, name, slug, with_review=False):
     restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
     if restaurant is None:
         restaurant = Restaurant(name=name, slug=slug, is_active=True, is_published=True)
@@ -64,7 +68,10 @@ def _upsert_restaurant(db, *, name, slug, google_review_url=None):
     restaurant.is_active = True
     restaurant.is_published = True
     restaurant.deleted_at = None
-    restaurant.google_review_url = google_review_url
+    restaurant.google_maps_url = E2E_MAPS_URL if with_review else None
+    restaurant.google_place_ftid = "0x91a7c3749150a1f7:0xb61bbbe27d37f437" if with_review else None
+    restaurant.google_review_url = E2E_REVIEW_URL if with_review else None
+    restaurant.google_review_url_override = None
     db.commit()
     db.refresh(restaurant)
     return restaurant
@@ -116,7 +123,7 @@ def seed_e2e():
             password=owner_password,
             role=UserRole.RESTAURANT_OWNER,
         )
-        own = _upsert_restaurant(db, name="E2E Propio", slug=OWN_SLUG, google_review_url=E2E_REVIEW_URL)
+        own = _upsert_restaurant(db, name="E2E Propio", slug=OWN_SLUG, with_review=True)
         other = _upsert_restaurant(db, name="E2E Ajeno", slug=OTHER_SLUG)
         _upsert_loyalty_program(db, own)
         # "E2E Ajeno" sin programa activo: su carta no debe mostrar la fila de acciones
