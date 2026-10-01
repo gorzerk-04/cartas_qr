@@ -23,7 +23,7 @@ export function useLoyaltyProgram(restaurantId: string) {
   });
 }
 
-// `slug` permite revalidar la carta pública al guardar (el banner depende del programa).
+// `slug` permite revalidar la carta pública al guardar (el botón de fidelidad depende del programa).
 export function useSaveLoyaltyProgram(restaurantId: string, slug?: string) {
   const queryClient = useQueryClient();
   return useMutation({

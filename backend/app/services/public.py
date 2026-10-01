@@ -31,7 +31,11 @@ class PublicService:
 
         program = loyalty_program_repository.get_by_restaurant(db, restaurant.id)
         loyalty = (
-            {"visits_required": program.visits_required, "reward_description": program.reward_description}
+            {
+                "visits_required": program.visits_required,
+                "reward_description": program.reward_description,
+                "min_hours_between_visits": program.min_hours_between_visits,
+            }
             if program is not None and program.is_active
             else None
         )
@@ -54,6 +58,7 @@ class PublicService:
             whatsapp=restaurant.whatsapp,
             email=restaurant.email,
             website=restaurant.website,
+            review_url=restaurant.google_review_url_override or restaurant.google_review_url,
             address=restaurant.address,
             city=restaurant.city,
             country=restaurant.country,

@@ -316,7 +316,7 @@ def test_la_carta_publica_incluye_loyalty_solo_si_el_programa_esta_activo(client
     put_program(client, h, resto.id, is_active=True, visits_required=7, reward_description="Jugo gratis")
     cid, _ = make_customer_with_visits(client, db, h, resto.id, 1)
     body = client.get(url).json()
-    assert body["loyalty"] == {"visits_required": 7, "reward_description": "Jugo gratis"}
+    assert body["loyalty"] == {"visits_required": 7, "reward_description": "Jugo gratis", "min_hours_between_visits": 0}
     # nunca datos de comensales
     raw = client.get(url).text
     assert "Ana" not in raw and "987654321" not in raw and cid not in raw

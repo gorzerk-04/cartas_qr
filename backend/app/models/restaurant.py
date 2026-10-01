@@ -26,6 +26,11 @@ class Restaurant(Base, AuditMixin):
     whatsapp = Column(String(20), nullable=True)
     email = Column(String(255), nullable=True)
     website = Column(String(500), nullable=True)
+    # Reseñas de Google (solo admin). La carta usa el override si existe, si no el generado.
+    google_maps_url = Column(Text, nullable=True)  # enlace de Maps que usó el admin
+    google_place_ftid = Column(String(100), nullable=True)
+    google_review_url = Column(String(500), nullable=True)  # generado desde google_maps_url
+    google_review_url_override = Column(String(500), nullable=True)  # Perfil de Empresa
     
     # Location
     address = Column(Text, nullable=True)

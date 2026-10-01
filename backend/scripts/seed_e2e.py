@@ -3,9 +3,10 @@
 Crea (o actualiza):
   - el admin de plataforma            (E2E_ADMIN_USERNAME / E2E_ADMIN_PASSWORD)
   - un dueño sin cambio pendiente     (E2E_OWNER_USERNAME / E2E_OWNER_EMAIL / E2E_OWNER_PASSWORD)
-  - el restaurante "E2E Propio", asignado al dueño y con el programa de fidelización
-    activo (2 visitas para canjear, sin tiempo mínimo entre visitas)
-  - el restaurante "E2E Ajeno", sin asignar
+  - el restaurante "E2E Propio", asignado al dueño, con el programa de fidelización
+    activo (2 visitas para canjear, sin tiempo mínimo entre visitas) y con enlace de
+    reseñas de Google
+  - el restaurante "E2E Ajeno", sin asignar, sin programa y sin enlace de reseñas
 
 Se niega a correr con ENVIRONMENT=production. Uso (desde backend/):
     E2E_ADMIN_PASSWORD=... E2E_OWNER_PASSWORD=... python scripts/seed_e2e.py
@@ -27,6 +28,12 @@ from app.services.loyalty import default_consent_text  # noqa: E402
 
 OWN_SLUG = "e2e-propio"
 OTHER_SLUG = "e2e-ajeno"
+# Reseñas de prueba: enlace largo de Google Maps (no requiere red) y el enlace que genera
+E2E_MAPS_URL = (
+    "https://www.google.com/maps/place/Chifa+Taiwan/@-9.9554469,-76.2486745,21z/data=!4m6!3m5"
+    "!1s0x91a7c3749150a1f7:0xb61bbbe27d37f437!8m2!3d-9.9554923!4d-76.2486634?entry=tts"
+)
+E2E_REVIEW_URL = "https://search.google.com/local/writereview?placeid=ChIJ96FQkXTDp5ERN_Q3feK7G7Y"
 
 
 def _require(name: str) -> str:
@@ -52,7 +59,7 @@ def _upsert_user(db, *, username, email, password, role):
     return user
 
 
-def _upsert_restaurant(db, *, name, slug):
+def _upsert_restaurant(db, *, name, slug, with_review=False):
     restaurant = db.query(Restaurant).filter(Restaurant.slug == slug).first()
     if restaurant is None:
         restaurant = Restaurant(name=name, slug=slug, is_active=True, is_published=True)
@@ -61,6 +68,10 @@ def _upsert_restaurant(db, *, name, slug):
     restaurant.is_active = True
     restaurant.is_published = True
     restaurant.deleted_at = None
+    restaurant.google_maps_url = E2E_MAPS_URL if with_review else None
+    restaurant.google_place_ftid = "0x91a7c3749150a1f7:0xb61bbbe27d37f437" if with_review else None
+    restaurant.google_review_url = E2E_REVIEW_URL if with_review else None
+    restaurant.google_review_url_override = None
     db.commit()
     db.refresh(restaurant)
     return restaurant
@@ -112,9 +123,12 @@ def seed_e2e():
             password=owner_password,
             role=UserRole.RESTAURANT_OWNER,
         )
-        own = _upsert_restaurant(db, name="E2E Propio", slug=OWN_SLUG)
+        own = _upsert_restaurant(db, name="E2E Propio", slug=OWN_SLUG, with_review=True)
         other = _upsert_restaurant(db, name="E2E Ajeno", slug=OTHER_SLUG)
         _upsert_loyalty_program(db, own)
+        # "E2E Ajeno" sin programa activo: su carta no debe mostrar la fila de acciones
+        db.query(LoyaltyProgram).filter(LoyaltyProgram.restaurant_id == other.id).update({"is_active": False})
+        db.commit()
 
         # El dueño es miembro solo del restaurante propio
         db.query(RestaurantMember).filter(
@@ -129,8 +143,8 @@ def seed_e2e():
             db.add(RestaurantMember(user_id=owner.id, restaurant_id=own.id))
         db.commit()
         print(f"Datos e2e listos: admin '{admin_username}', dueño '{owner_username}', "
-              f"restaurantes '{OWN_SLUG}' (asignado, con programa activo de 2 visitas) y "
-              f"'{OTHER_SLUG}' (sin asignar).")
+              f"restaurantes '{OWN_SLUG}' (asignado, con programa activo de 2 visitas y enlace de "
+              f"reseñas) y '{OTHER_SLUG}' (sin asignar, sin programa ni enlace).")
     except Exception as e:
         print(f"Error al sembrar los datos e2e: {e}")
         db.rollback()

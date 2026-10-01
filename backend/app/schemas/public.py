@@ -64,6 +64,7 @@ class PublicLoyaltyItem(BaseModel):
     # Nunca incluye datos de comensales
     visits_required: int
     reward_description: str
+    min_hours_between_visits: int
 
 
 class PublicRestaurantResponse(BaseModel):
@@ -80,6 +81,8 @@ class PublicRestaurantResponse(BaseModel):
     whatsapp: Optional[str] = None
     email: Optional[str] = None
     website: Optional[str] = None
+    # Enlace para dejar reseña en Google: el oficial si existe, si no el generado, o null
+    review_url: Optional[str] = None
     address: Optional[str] = None
     city: Optional[str] = None
     country: str

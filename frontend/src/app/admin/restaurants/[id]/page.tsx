@@ -24,6 +24,7 @@ import ImageUploader from "../../../../components/admin/image-uploader";
 import OperatingHoursEditor from "../../../../components/admin/operating-hours-editor";
 import RestaurantSocialsEditor from "../../../../components/admin/restaurant-socials-editor";
 import { getErrorMessage } from "../../../../lib/api-error";
+import GoogleReviewSummary from "../../../../components/admin/google-review-summary";
 import { blankToNull } from "../../../../lib/forms";
 import { useAuth } from "../../../../hooks/use-auth";
 
@@ -51,7 +52,7 @@ const COLOR_FIELDS = [
 export default function EditRestaurantPage() {
   const params = useParams();
   const id = params.id as string;
-  const { can } = useAuth();
+  const { can, isPlatformAdmin } = useAuth();
   const canToggleActive = can("toggleActive");
   const canEdit = can("editRestaurantInfo");
 
@@ -426,6 +427,7 @@ export default function EditRestaurantPage() {
                 className="mt-1 block w-full rounded-lg border border-[#2D3147] bg-[#0F1117] px-3 py-2.5 text-sm text-white focus:border-[#6366F1] focus:outline-none"
               />
             </div>
+            {isPlatformAdmin && <GoogleReviewSummary restaurantId={id} />}
           </div>
         </div>
 

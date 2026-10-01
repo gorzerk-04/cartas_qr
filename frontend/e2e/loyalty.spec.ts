@@ -7,7 +7,6 @@ import { apiLogin, contextFor, findRestaurantId, requireEnv } from "./helpers";
 requireEnv("E2E_OWNER_PASSWORD");
 const OWNER_USERNAME = process.env.E2E_OWNER_USERNAME ?? "e2e_owner";
 const OWNER_PASSWORD = process.env.E2E_OWNER_PASSWORD ?? "";
-const OWN_SLUG = "e2e-propio";
 
 // Celular nuevo en cada corrida, para que el comensal siempre sea "nuevo"
 const PHONE = `9${Math.floor(Math.random() * 1e8).toString().padStart(8, "0")}`;
@@ -87,21 +86,5 @@ test.describe("Fidelización", () => {
     await expect(page.getByTestId("progress-label")).toHaveText("0 / 2", { timeout: 15_000 });
     await expect(page.getByText("Postre e2e gratis").first()).toBeVisible();
     await page.close();
-  });
-
-  test("la carta pública muestra el banner de fidelidad", async ({ browser }) => {
-    const ctx = await browser.newContext();
-    const page = await ctx.newPage();
-    await page.goto(`/menu/${OWN_SLUG}`);
-    const banner = page.getByTestId("loyalty-banner");
-    await expect(banner).toBeVisible({ timeout: 15_000 });
-    await expect(banner).toContainText("Programa de fidelidad");
-    await expect(banner).toContainText("2 visitas");
-    await expect(banner).toContainText("Postre e2e gratis");
-    await expect(banner).toContainText("Pregunta en caja");
-    // nunca muestra datos de comensales
-    await expect(page.locator("body")).not.toContainText(PHONE);
-    await expect(page.locator("body")).not.toContainText("Comensal E2E");
-    await ctx.close();
   });
 });

@@ -8,6 +8,7 @@ import {
   UtensilsCrossed,
   QrCode,
   Users,
+  Star,
   LogOut,
   ChevronLeft,
   Menu,
@@ -44,6 +45,12 @@ const navItems: NavItem[] = [
     label: "Usuarios",
     href: "/admin/users",
     icon: Users,
+    adminOnly: true,
+  },
+  {
+    label: "Reseñas de Google",
+    href: "/admin/google-reviews",
+    icon: Star,
     adminOnly: true,
   },
 ];
